@@ -7,13 +7,13 @@ trading desk is the direction that leaves you short.
 
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
 
 from .config import LONDON_TZ
-from .selection import REASON_OK, select_live_forecasts
+from .selection import select_live_forecasts
 
 # MAPE is deliberately absent. Wind output goes near zero often enough that
 # dividing by the actual explodes: a 200 MW miss on a 50 MW hour is 400% and
@@ -74,12 +74,6 @@ def compute_metrics(joined: pd.DataFrame) -> dict:
         "p90_abs_error_mw": float(np.quantile(abs_err, 0.90)),
         "mean_actual_mw": mean_actual,
     }
-
-
-def max_supported_horizon(forecasts: pd.DataFrame, actuals: pd.DataFrame) -> float:
-    """Largest lead time, in hours, that any forecast in the snapshot offers."""
-    lead = (forecasts["startTime"] - forecasts["publishTime"]).dt.total_seconds() / 3600.0
-    return float(lead.max())
 
 
 def error_by_horizon(

@@ -9,7 +9,6 @@ hint at using a wider delivery window, level errors do not.
 
 from __future__ import annotations
 
-
 import pandas as pd
 
 #: Shifts tried when testing whether a miss is a timing miss, in hours.

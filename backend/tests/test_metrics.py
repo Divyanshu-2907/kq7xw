@@ -8,10 +8,9 @@ import pytest
 
 from app.metrics import (
     compute_metrics,
-    error_by_hour_of_day,
     error_by_horizon,
+    error_by_hour_of_day,
     error_by_wind_level,
-    join_actuals,
 )
 
 UTC = "UTC"

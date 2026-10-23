@@ -16,7 +16,7 @@ The desk cares about the low end -- that is the wind you can count on.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd

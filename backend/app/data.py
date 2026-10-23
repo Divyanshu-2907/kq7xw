@@ -45,10 +45,3 @@ def load_forecasts() -> pd.DataFrame:
 def load_ingest_report() -> dict:
     """The provenance/quality record written by the ingest script."""
     return json.loads(REPORT_PATH.read_text(encoding="utf-8"))
-
-
-def clear_cache() -> None:
-    """Drop cached frames (tests, or after a re-ingest in the same process)."""
-    load_actuals.cache_clear()
-    load_forecasts.cache_clear()
-    load_ingest_report.cache_clear()
