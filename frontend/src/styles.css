@@ -12,7 +12,7 @@
 
   --text: #e6e9ef;
   --text-dim: #9aa4b2;
-  --text-faint: #6b7483;
+  --text-faint: #8d96a6;  /* 5.81:1 on --panel */
 
   /* forecast = accent, actual = neutral */
   --forecast: #4cc2ff;
@@ -21,6 +21,7 @@
   --band: rgba(76, 194, 255, 0.13);
 
   --warn: #f2b53c;
+  --warn-text: #f2b53c;
   --bad: #ff6b6b;
   --good: #4ade80;
 
@@ -38,9 +39,13 @@
   --line-soft: #e8ebf0;
   --text: #121821;
   --text-dim: #5a6472;
-  --text-faint: #8a93a1;
+  --text-faint: #696f7d;  /* 5.04:1 on --panel */
   --forecast: #0a7ec4;
   --forecast-soft: rgba(10, 126, 196, 0.12);
+  --warn: #b8780f;  /* 3.4:1 as a graphic on white */
+  --warn-text: #8a5a00;  /* 5.93:1 on white; the plain --warn is 1.83:1 */
+  --good: #15803d;
+  --bad: #c0392b;
   --actual: #2a3240;
   --band: rgba(10, 126, 196, 0.12);
 }
@@ -115,7 +120,9 @@ body {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-faint);
+  /* --text-dim, not --text-faint: at 10px on --panel-2 the faint token fell to
+     4.15:1, under the AA floor. */
+  color: var(--text-dim);
   white-space: nowrap;
 }
 
