@@ -16,8 +16,9 @@ resolve a day-ahead cutoff clock time, then converted straight back to UTC.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import time
-from typing import Iterable, Literal
+from typing import Literal
 
 import pandas as pd
 
@@ -64,6 +65,10 @@ def _as_utc_series(s: pd.Series, label: str) -> pd.Series:
     if len(s) == 0:
         # An empty column carries no tz information to check or preserve.
         return pd.Series(pd.DatetimeIndex([], tz="UTC"), index=s.index)
+    if isinstance(s.dtype, pd.DatetimeTZDtype):
+        # Already tz-aware: pd.to_datetime would re-inspect every value, which
+        # dominated the cost of re-selecting the same snapshot per horizon.
+        return s.dt.tz_convert("UTC")
     out = pd.to_datetime(s)
     if out.dt.tz is None:
         raise ValueError(f"{label} must be timezone-aware (UTC); got naive timestamps.")

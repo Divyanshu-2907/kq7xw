@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import math
 import os
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time
 from functools import lru_cache
 from typing import Any
 
@@ -35,7 +35,6 @@ from .bands import (
 from .config import (
     DEFAULT_DAY_AHEAD_CUTOFF_LOCAL,
     FORECAST_ALIGNMENT,
-    LONDON_TZ,
 )
 from .data import load_actuals, load_forecasts, load_ingest_report
 from .metrics import (
@@ -229,6 +228,15 @@ def _full_plan(
     return plan_on(joined, confidence if confidence is not None else 0.9)
 
 
+@lru_cache(maxsize=1)
+def _snapshot_facts() -> tuple[float, tuple[str, ...]]:
+    """Max lead and the distinct publish clock times, derived once."""
+    forecasts = load_forecasts()
+    lead = (forecasts["startTime"] - forecasts["publishTime"]).dt.total_seconds() / 3600
+    pubs = tuple(sorted(forecasts["publishTime"].dt.strftime("%H:%M").unique()))
+    return float(lead.max()), pubs
+
+
 @lru_cache(maxsize=16)
 def _full_error_by_horizon() -> pd.DataFrame:
     return error_by_horizon(load_forecasts(), load_actuals(), HORIZON_GRID)
@@ -288,16 +296,14 @@ def meta() -> s.Meta:
     """What the UI needs to configure itself: the date range the snapshot covers,
     the horizon range the data actually supports, the default day-ahead gate, and
     the resolution caveat behind every number."""
-    forecasts = load_forecasts()
-    lead = (forecasts["startTime"] - forecasts["publishTime"]).dt.total_seconds() / 3600
-    pubs = sorted(forecasts["publishTime"].dt.strftime("%H:%M").unique())
+    max_lead_h, pubs = _snapshot_facts()
     return s.Meta(
         target_start=_t(TARGET_START),  # type: ignore[arg-type]
         target_end=_t(TARGET_END),  # type: ignore[arg-type]
         horizon=s.HorizonRange(
             min_h=0.0,
             max_h=MAX_FULL_COVERAGE_HORIZON_H,
-            max_lead_in_data_h=float(lead.max()),
+            max_lead_in_data_h=max_lead_h,
         ),
         default_day_ahead_cutoff_local=DEFAULT_DAY_AHEAD_CUTOFF_LOCAL.strftime("%H:%M"),
         day_ahead_cutoff_note=DAY_AHEAD_NOTE,
@@ -305,7 +311,7 @@ def meta() -> s.Meta:
         forecast_resolution="PT1H",
         alignment=FORECAST_ALIGNMENT,
         resolution_note=RESOLUTION_NOTE,
-        publish_times_utc=pubs,
+        publish_times_utc=list(pubs),
         error_convention=ERROR_CONVENTION,
     )
 
@@ -657,7 +663,7 @@ def data_quality_endpoint() -> s.DataQualityResponse:
     dq = data_quality(load_ingest_report(), load_actuals(), load_forecasts())
     live = dq["live_checks"]
     return s.DataQualityResponse(
-        **{k: v for k, v in live.items()},
+        **live,
         coverage_per_day=[s.CoverageDay(**d) for d in dq["coverage_per_day"]],
         handling=dq["handling"],
         ingest=dq["ingest_report"],
