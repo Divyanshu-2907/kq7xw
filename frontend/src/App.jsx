@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { api } from './api.js'
 import { useEndpoint } from './lib/useEndpoint.js'
 import { useUrlState } from './lib/useUrlState.js'
 import TopBar from './components/TopBar.jsx'
 import SlotDrawer from './components/SlotDrawer.jsx'
+import HowToRead from './components/HowToRead.jsx'
 import { ErrorState } from './components/States.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Replay from './pages/Replay.jsx'
@@ -70,7 +71,7 @@ export default function App() {
   // link can be shared as-is.
   useEffect(() => {
     if (state.tab === 'replay' && !state.day && worstDay) patch({ day: worstDay })
-  }, [state.tab, state.day, worstDay])
+  }, [state.tab, state.day, worstDay, patch])
 
   const openDay = (day) => patch({ tab: 'replay', day })
 
@@ -115,6 +116,8 @@ export default function App() {
           </div>
         )}
 
+        {state.tab === 'dashboard' && <HowToRead />}
+
         {state.tab === 'dashboard' && (
           <Dashboard
             state={state}
@@ -126,7 +129,7 @@ export default function App() {
 
         {state.tab === 'replay' &&
           (replayDay ? (
-            <Replay day={replayDay} cutoff={state.cutoff} meta={meta.data} />
+            <Replay day={replayDay} cutoff={state.cutoff} />
           ) : (
             <section className="panel">
               <div className="state">
