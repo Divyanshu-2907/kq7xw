@@ -53,7 +53,16 @@ export async function get(path, params = {}, { signal } = {}) {
 export const api = {
   meta: (o) => get('/api/meta', {}, o),
   series: (p, o) => get('/api/series', p, o),
+  metrics: (p, o) => get('/api/metrics', p, o),
   errorByHorizon: (o) => get('/api/error-by-horizon', {}, o),
+  errorByHour: (p, o) => get('/api/error-by-hour', p, o),
+  errorByLevel: (p, o) => get('/api/error-by-level', p, o),
+  calibration: (p, o) => get('/api/calibration', p, o),
+  plan: (p, o) => get('/api/plan', p, o),
+  replay: (p, o) => get('/api/replay', p, o),
+  slot: (p, o) => get('/api/slot', p, o),
+  misses: (p, o) => get('/api/misses', p, o),
+  dataQuality: (o) => get('/api/data-quality', {}, o),
 }
 
 export const API_BASE = BASE

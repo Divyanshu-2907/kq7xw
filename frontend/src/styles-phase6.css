@@ -1,0 +1,326 @@
+/* Phase 6: tabs, replay controls, tables, drawer, quality panels. */
+
+/* ------------------------------------------------------------------- tabs */
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  gap: 2px;
+  padding: 0 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  font: inherit;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 9px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab:hover { color: var(--text); }
+
+.tab[aria-current="page"] {
+  color: var(--text);
+  border-bottom-color: var(--forecast);
+}
+
+/* ---------------------------------------------------------------- badges */
+.badge {
+  border-radius: var(--radius);
+  padding: 9px 11px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.badge strong { color: var(--text); }
+.badge.ok { border-color: color-mix(in srgb, var(--good) 30%, var(--line)); }
+.badge.warn { border-color: color-mix(in srgb, var(--warn) 34%, var(--line)); }
+
+/* -------------------------------------------------------- replay controls */
+.replay-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.ghost-btn.play { min-width: 92px; }
+
+.slider-stack {
+  flex: 1 1 320px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.replay-range { width: 100%; }
+
+/* The gate sits on the day BEFORE delivery, so it cannot live on the chart's
+   delivery-time axis. It belongs on this publication timeline instead. */
+.timeline {
+  position: relative;
+  height: 20px;
+  margin: 0 7px;
+}
+
+.timeline .tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 5px;
+  background: var(--text-faint);
+  transform: translateX(-0.5px);
+}
+
+.timeline .tick.late { background: color-mix(in srgb, var(--warn) 60%, transparent); }
+.timeline .tick.at { background: var(--forecast); height: 8px; width: 2px; }
+
+.timeline .gate {
+  position: absolute;
+  top: -3px;
+  bottom: 6px;
+  width: 0;
+  border-left: 1px dashed var(--warn);
+}
+
+.timeline .gate-label {
+  position: absolute;
+  top: 9px;
+  left: 4px;
+  white-space: nowrap;
+  font-size: 9.5px;
+  color: var(--warn);
+}
+
+.vintage-stamp {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+}
+
+.vintage-time {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.vintage-tag { font-size: 10.5px; color: var(--text-faint); }
+.vintage-stamp.late .vintage-tag { color: var(--warn); }
+
+.narrative p { margin: 0 0 6px; font-size: 13px; line-height: 1.5; }
+.narrative strong { font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------- plan controls */
+.plan-controls {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* ---------------------------------------------------------------- tables */
+.table-scroll { overflow-x: auto; }
+
+table.misses {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.misses th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  font-weight: 600;
+  padding: 0 8px 6px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+table.misses td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line-soft);
+  white-space: nowrap;
+}
+
+table.misses th.r, table.misses td.r { text-align: right; }
+table.misses td.dim, table.misses .dim { color: var(--text-faint); }
+table.misses td.over { color: var(--warn); }
+table.misses td.under { color: var(--forecast); }
+
+table.misses tbody tr[role="button"] { cursor: pointer; }
+table.misses tbody tr[role="button"]:hover { background: var(--panel-2); }
+table.misses tbody tr[role="button"]:focus-visible {
+  outline: 2px solid var(--forecast);
+  outline-offset: -2px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.tag.timing { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); color: var(--warn); }
+.tag.size { border-color: color-mix(in srgb, var(--forecast) 45%, var(--line)); color: var(--forecast); }
+
+.takeaway {
+  margin: 8px 2px 4px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  border-left: 2px solid var(--forecast);
+  padding-left: 9px;
+}
+
+/* ---------------------------------------------------------------- drawer */
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 50;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 100vw);
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.35);
+  padding: 14px 16px 20px;
+  overflow-y: auto;
+  z-index: 51;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.drawer-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.drawer-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+.drawer-stats .big { font-size: 17px; font-weight: 600; }
+.drawer-stats .over { color: var(--warn); }
+.drawer-stats .under { color: var(--forecast); }
+
+/* -------------------------------------------------------- quality panels */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text-dim);
+}
+
+.chip.odd {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
+  color: var(--warn);
+}
+
+dl.handling { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+dl.handling dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+dl.handling dd { margin: 0; font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+.daybars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 86px;
+}
+
+.daybar {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  position: relative;
+}
+
+.daybar .fill {
+  display: block;
+  background: var(--forecast);
+  opacity: 0.55;
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+}
+
+.daybar .daylabel {
+  font-size: 8.5px;
+  color: var(--text-faint);
+  text-align: center;
+  padding-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 620px) {
+  .tabs { padding: 0 8px; }
+  .replay-controls { gap: 10px; }
+  .vintage-stamp { min-width: 0; }
+  .drawer { width: 100vw; padding: 12px 12px 18px; }
+  .drawer-stats { grid-template-columns: 1fr; }
+  .plan-controls { gap: 12px; }
+  .daybars { height: 64px; }
+  .daybar .daylabel { font-size: 7.5px; }
+}
+
+/* The provenance panel lists raw endpoint query strings, which have no spaces
+   to break on and pushed a scrollbar onto narrow screens. */
+.tip-grid dd {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}

@@ -1,49 +1,43 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ApiError, api } from './api.js'
+import { api } from './api.js'
+import { useEndpoint } from './lib/useEndpoint.js'
 import { useUrlState } from './lib/useUrlState.js'
-import { dayUTC } from './lib/format.js'
 import TopBar from './components/TopBar.jsx'
-import MetricCards from './components/MetricCards.jsx'
-import MainChart from './components/MainChart.jsx'
-import HorizonChart from './components/HorizonChart.jsx'
-import {
-  CardsSkeleton,
-  ChartSkeleton,
-  EmptyState,
-  ErrorState,
-  Info,
-} from './components/States.jsx'
+import SlotDrawer from './components/SlotDrawer.jsx'
+import { ErrorState } from './components/States.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import Replay from './pages/Replay.jsx'
+import Plan from './pages/Plan.jsx'
+import Misses from './pages/Misses.jsx'
+import Analysis from './pages/Analysis.jsx'
+import Quality from './pages/Quality.jsx'
 
 const DEFAULTS = {
+  tab: 'dashboard',
   start: '2026-01-05',
   end: '2026-01-11',
   mode: 'horizon',
   horizon: 24,
   cutoff: '09:20',
   theme: 'dark',
+  day: '',
+  confidence: 0.9,
+  cost_ratio: 3,
+  slot: '',
 }
 
-// Small hook so each panel can show its own skeleton and its own error rather
-// than one failure blanking the page.
-function useEndpoint(fn, deps, { enabled = true } = {}) {
-  const [state, setState] = useState({ loading: enabled, data: null, error: null })
-  const [nonce, setNonce] = useState(0)
+const TABS = [
+  ['dashboard', 'Dashboard'],
+  ['replay', 'Decision Replay'],
+  ['plan', 'Plan'],
+  ['misses', 'Biggest misses'],
+  ['analysis', 'Analysis'],
+  ['quality', 'Data quality'],
+]
 
-  useEffect(() => {
-    if (!enabled) return
-    const ac = new AbortController()
-    setState((s) => ({ ...s, loading: true, error: null }))
-    fn({ signal: ac.signal })
-      .then((data) => setState({ loading: false, data, error: null }))
-      .catch((err) => {
-        if (err.name === 'AbortError') return
-        setState({ loading: false, data: null, error: err })
-      })
-    return () => ac.abort()
-  }, [...deps, nonce, enabled])
-
-  return { ...state, retry: () => setNonce((n) => n + 1) }
-}
+// Tabs that read a date range and cutoff from the top bar. Replay drives its
+// own day, and Data quality describes the whole snapshot either way.
+const RANGE_TABS = new Set(['dashboard', 'plan', 'misses', 'analysis'])
 
 export default function App() {
   const [state, patch] = useUrlState(DEFAULTS)
@@ -62,19 +56,23 @@ export default function App() {
     return p
   }, [state.start, state.end, state.mode, state.horizon, state.cutoff])
 
-  const series = useEndpoint(
-    ({ signal }) => api.series(params, { signal }),
-    [JSON.stringify(params)],
+  // Replay opens on the day of the worst miss unless the URL names one.
+  const worst = useEndpoint(
+    ({ signal }) =>
+      api.misses({ n: 1, mode: 'day_ahead', cutoff: state.cutoff }, { signal }),
+    [state.cutoff],
+    { enabled: state.tab === 'replay' && !state.day },
   )
-  const horizons = useEndpoint(({ signal }) => api.errorByHorizon({ signal }), [])
+  const worstDay = worst.data?.rows?.[0]?.start_time?.slice(0, 10)
+  const replayDay = state.day || worstDay
 
-  const points = series.data?.points ?? []
-  const scored = points.filter((p) => p.forecast_mw !== null)
-  const rangeLabel = `${dayUTC(`${state.start}T00:00Z`)} – ${dayUTC(`${state.end}T00:00Z`)}`
-  const cutoffLabel =
-    state.mode === 'horizon'
-      ? `${state.horizon} h before delivery`
-      : `${state.cutoff} London, day before delivery`
+  // Pin the resolved default into the URL, so the date control shows it and the
+  // link can be shared as-is.
+  useEffect(() => {
+    if (state.tab === 'replay' && !state.day && worstDay) patch({ day: worstDay })
+  }, [state.tab, state.day, worstDay])
+
+  const openDay = (day) => patch({ tab: 'replay', day })
 
   return (
     <div className="app">
@@ -84,117 +82,80 @@ export default function App() {
         meta={meta.data}
         theme={theme}
         onToggleTheme={() => patch({ theme: theme === 'dark' ? 'light' : 'dark' })}
+        showRangeControls={RANGE_TABS.has(state.tab)}
       />
+
+      <nav className="tabs" aria-label="Views">
+        {TABS.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            className="tab"
+            aria-current={state.tab === id ? 'page' : undefined}
+            onClick={() => patch({ tab: id })}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
 
       <main>
         {meta.error && <ErrorState error={meta.error} onRetry={meta.retry} />}
 
-        <div className="banner">
-          <span aria-hidden="true">⚠</span>
-          <div>
-            <strong>Known data caveat.</strong> WINDFOR sits about 1.6 GW above
-            FUELHH across this month — a vintage published 14 h <em>after</em>{' '}
-            delivery is still ~1,600 MW high, and a single scalar removes 47% of
-            MAE. The two datasets appear to cover different wind populations, so
-            treat raw bias as a scope difference rather than forecast skill.
+        {state.tab !== 'quality' && (
+          <div className="banner">
+            <span aria-hidden="true">⚠</span>
+            <div>
+              <strong>Known data caveat.</strong> WINDFOR sits about 1.6 GW above
+              FUELHH across this month — a vintage published 14 h <em>after</em>{' '}
+              delivery is still ~1,600 MW high, and a single scalar removes 47% of
+              MAE. The two datasets appear to cover different wind populations, so
+              treat raw bias as a scope difference rather than forecast skill.
+            </div>
           </div>
-        </div>
-
-        {series.loading && !series.data ? (
-          <CardsSkeleton />
-        ) : series.error ? null : (
-          <MetricCards metrics={series.data?.metrics} />
         )}
 
-        <section className="panel">
-          <div className="panel-head">
-            <span className="panel-title">Actual vs live forecast</span>
-            <span className="panel-note">
-              {rangeLabel} · cutoff {cutoffLabel} · times UTC
-            </span>
-            <Info>
-              The forecast line is whichever vintage was newest at the cutoff for
-              each delivery period — never one published later. Drag the handles
-              under the chart to zoom.
-            </Info>
-          </div>
-          {series.loading && !series.data ? (
-            <ChartSkeleton height={300} />
-          ) : series.error ? (
-            <ErrorState error={series.error} onRetry={series.retry} />
-          ) : scored.length === 0 ? (
-            <EmptyState
-              title="No forecast was available at this cutoff"
-              detail={
-                state.mode === 'horizon'
-                  ? `Nothing was published ${state.horizon} h or more before these delivery periods. Try a shorter horizon.`
-                  : `Nothing was published before the ${state.cutoff} gate for these days. Try a later gate.`
-              }
-            />
+        {state.tab === 'dashboard' && (
+          <Dashboard
+            state={state}
+            params={params}
+            meta={meta.data}
+            onPickSlot={(iso) => patch({ slot: iso })}
+          />
+        )}
+
+        {state.tab === 'replay' &&
+          (replayDay ? (
+            <Replay day={replayDay} cutoff={state.cutoff} meta={meta.data} />
           ) : (
-            <MainChart points={points} />
-          )}
-        </section>
+            <section className="panel">
+              <div className="state">
+                <div className="state-title">Finding the day with the biggest miss…</div>
+              </div>
+            </section>
+          ))}
 
-        <div className="two-col">
-          <section className="panel">
-            <div className="panel-head">
-              <span className="panel-title">Value of waiting</span>
-              <span className="panel-note">
-                MAE by horizon, whole month
-              </span>
-              <Info>
-                Every point is its own independent no-lookahead run over all of
-                January, so this is not a time series. Deciding later costs less
-                error — watch coverage past 42 h, where fewer periods have any
-                forecast at all.
-              </Info>
-            </div>
-            {horizons.loading && !horizons.data ? (
-              <ChartSkeleton height={212} />
-            ) : horizons.error ? (
-              <ErrorState error={horizons.error} onRetry={horizons.retry} />
-            ) : (
-              <HorizonChart
-                rows={horizons.data.rows}
-                currentHorizon={state.horizon}
-                active={state.mode === 'horizon'}
-              />
-            )}
-          </section>
+        {state.tab === 'plan' && (
+          <Plan
+            params={params}
+            confidence={Number(state.confidence)}
+            costRatio={Number(state.cost_ratio)}
+            patch={patch}
+          />
+        )}
 
-          <section className="panel">
-            <div className="panel-head">
-              <span className="panel-title">Selection in force</span>
-            </div>
-            <dl className="tip-grid" style={{ gridTemplateColumns: 'auto 1fr', rowGap: 6 }}>
-              <dt>Mode</dt>
-              <dd style={{ textAlign: 'left' }}>
-                {state.mode === 'horizon' ? 'Horizon' : 'Day-ahead'}
-              </dd>
-              <dt>Cutoff</dt>
-              <dd style={{ textAlign: 'left' }}>{cutoffLabel}</dd>
-              <dt>Periods</dt>
-              <dd style={{ textAlign: 'left' }}>
-                {points.length ? `${points.length} half-hourly` : '—'}
-              </dd>
-              <dt>Actuals</dt>
-              <dd style={{ textAlign: 'left' }}>
-                {meta.data?.actual_resolution === 'PT30M' ? 'half-hourly' : '—'}
-              </dd>
-              <dt>Forecasts</dt>
-              <dd style={{ textAlign: 'left' }}>
-                {meta.data?.forecast_resolution === 'PT1H' ? 'hourly' : '—'}
-              </dd>
-            </dl>
-            {meta.data && (
-              <p className="panel-note" style={{ marginTop: 10 }}>
-                {meta.data.resolution_note}
-              </p>
-            )}
-          </section>
-        </div>
+        {state.tab === 'misses' && <Misses params={params} onOpenDay={openDay} />}
+
+        {state.tab === 'analysis' && <Analysis params={params} />}
+
+        {state.tab === 'quality' && <Quality />}
       </main>
+
+      <SlotDrawer
+        time={state.slot}
+        params={params}
+        onClose={() => patch({ slot: '' })}
+      />
 
       <footer>
         Elexon BMRS · FUELHH actuals (fuelType WIND) vs WINDFOR forecasts ·

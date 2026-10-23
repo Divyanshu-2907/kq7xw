@@ -40,3 +40,18 @@ export const signedMW = (v, digits = 0) =>
   v === null || v === undefined || Number.isNaN(v)
     ? '—'
     : `${v > 0 ? '+' : ''}${MW(v, digits)}`
+
+// The API returns pandas interval labels like "[14000.0, inf)". Those are fine
+// as keys but unreadable in a sentence.
+export function windBand(label) {
+  if (!label) return '—'
+  const m = String(label).match(/^[[(]\s*([\d.]+)\s*,\s*([\d.]+|inf)\s*[\])]$/)
+  if (!m) return label
+  const gw = (v) => {
+    const n = Number(v) / 1000
+    return Number.isInteger(n) ? String(n) : n.toFixed(1)
+  }
+  if (m[2] === 'inf') return `${gw(m[1])} GW and above`
+  if (Number(m[1]) === 0) return `under ${gw(m[2])} GW`
+  return `${gw(m[1])}–${gw(m[2])} GW`
+}

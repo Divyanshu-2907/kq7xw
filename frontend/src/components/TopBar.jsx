@@ -3,7 +3,7 @@ import { Info } from './States.jsx'
 // The whole decision context in one strip: which days, which cutoff rule, and
 // how far ahead of delivery the call is being made.
 
-export default function TopBar({ state, patch, meta, theme, onToggleTheme }) {
+export default function TopBar({ state, patch, meta, theme, onToggleTheme, showRangeControls = true }) {
   const minDate = meta ? meta.target_start.slice(0, 10) : '2026-01-01'
   const maxDate = meta
     ? new Date(new Date(meta.target_end).getTime() - 86400000).toISOString().slice(0, 10)
@@ -20,6 +20,21 @@ export default function TopBar({ state, patch, meta, theme, onToggleTheme }) {
         </span>
       </div>
 
+      {state.tab === 'replay' && (
+        <div className="control">
+          <span className="control-label">Delivery day</span>
+          <input
+            type="date"
+            value={state.day || ''}
+            min={minDate}
+            max={maxDate}
+            onChange={(e) => patch({ day: e.target.value })}
+            aria-label="Delivery day to replay"
+          />
+        </div>
+      )}
+
+      {showRangeControls && (
       <div className="control control-dates">
         <span className="control-label">Delivery dates</span>
         <div className="control-row">
@@ -42,7 +57,9 @@ export default function TopBar({ state, patch, meta, theme, onToggleTheme }) {
           />
         </div>
       </div>
+      )}
 
+      {state.tab !== 'replay' && (
       <div className="control">
         <span className="control-label">
           Cutoff rule{' '}
@@ -68,8 +85,9 @@ export default function TopBar({ state, patch, meta, theme, onToggleTheme }) {
           </button>
         </div>
       </div>
+      )}
 
-      {dayAhead ? (
+      {dayAhead || state.tab === 'replay' ? (
         <div className="control">
           <span className="control-label">
             Gate (London){' '}
