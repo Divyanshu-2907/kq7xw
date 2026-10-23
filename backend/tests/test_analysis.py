@@ -79,6 +79,35 @@ def test_biggest_misses_ranks_by_absolute_error_and_decomposes_each():
     assert out.iloc[0]["error"] == 5000.0  # positive = over-forecast
 
 
+def test_miss_at_the_window_edge_is_still_decomposed_via_context():
+    """A miss in the last period of a slice has no +3h neighbours inside it.
+
+    A flat level error is used rather than a single spike: shifting a lone spike
+    around a short series is genuinely ambiguous, so it would not isolate the
+    behaviour under test.
+    """
+    # uniformly 3000 MW too high, with the slice's last period slightly worse so
+    # it ranks first
+    forecast = [13000] * 10
+    forecast[3] = 14000
+    full = _joined(forecast, [10000] * 10)
+    window = full.iloc[:4]  # the miss sits on the final row of the slice
+
+    without = biggest_misses(window, n=1)
+    assert without.iloc[0]["startTime"] == window.iloc[3]["startTime"]
+    assert without.iloc[0]["miss_type"] == "unknown"
+    assert without.iloc[0]["decomposition_note"] == "insufficient overlap"
+
+    with_context = biggest_misses(window, n=1, context=full)
+    assert with_context.iloc[0]["miss_type"] == "size"
+    assert with_context.iloc[0]["decomposition_note"] is None
+    # no shift gets close to removing half the local error, which is the rule
+    assert with_context.iloc[0]["error_removed_by_shift_pct"] < 50.0
+    assert len(with_context.iloc[0]["shift_curve_mw"]) == 7
+    # ranking still comes from the window, not from the wider context
+    assert with_context.iloc[0]["startTime"] == window.iloc[3]["startTime"]
+
+
 def test_biggest_misses_ignores_periods_with_no_forecast():
     joined = _joined([np.nan, 10000, 12000], [10000, 10000, 10000])
     out = biggest_misses(joined, n=5)

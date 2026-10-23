@@ -617,7 +617,10 @@ def misses(
     list can be dominated by one date."""
     lo, hi = _window(start, end)
     m, h, c = _mode(mode, horizon, cutoff)
-    rows = biggest_misses(_slice(_full_joined(m, h, c), lo, hi), n=n)
+    full = _full_joined(m, h, c)
+    # Rank inside the window, but decompose against the whole month so a miss at
+    # the edge of the window still has neighbours to shift against.
+    rows = biggest_misses(_slice(full, lo, hi), n=n, context=full)
     return s.MissesResponse(
         selection=_selection(m, h, c, lo, hi),
         rows=[

@@ -26,8 +26,15 @@ def biggest_misses(
     shifts_h: tuple[float, ...] = DEFAULT_SHIFTS_H,
     window_h: float = DEFAULT_WINDOW_H,
     timing_threshold: float = TIMING_THRESHOLD,
+    context: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """The ``n`` worst periods by absolute error, each decomposed timing vs size.
+
+    Ranking uses ``joined``; the timing/size decomposition uses ``context`` when
+    given. They differ when the caller has sliced a window: a miss in the last
+    few hours of the window has no +3h neighbours inside it, so decomposing
+    against the slice alone returns "unknown" for exactly the periods at the
+    edges. Pass the full series as ``context`` to avoid that.
 
     Returns one row per miss with ``startTime``, ``forecast_mw``, ``actual_mw``,
     ``error``, ``abs_error``, ``lead_h``, plus the decomposition fields from
@@ -35,10 +42,11 @@ def biggest_misses(
     """
     scored = joined.loc[joined["error"].notna()]
     worst = scored.nlargest(n, "abs_error")
+    source = joined if context is None else context
     rows = []
     for _, miss in worst.iterrows():
         d = decompose_timing_vs_size(
-            joined,
+            source,
             miss["startTime"],
             shifts_h=shifts_h,
             window_h=window_h,
