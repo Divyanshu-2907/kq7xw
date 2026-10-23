@@ -81,7 +81,8 @@ export default function MainChart({ points, height = 300, onPickSlot }) {
           <i className="swatch" style={{ background: 'var(--actual)' }} /> Actual
         </span>
         <span>
-          <i className="swatch" style={{ background: 'var(--forecast)' }} /> Live forecast
+          <i className="swatch dashed" style={{ background: 'var(--forecast)' }} /> Live forecast
+          (dashed)
         </span>
         <span>
           <i className="swatch band" /> P10–P90 band{' '}
@@ -141,7 +142,10 @@ export default function MainChart({ points, height = 300, onPickSlot }) {
           <Line
             dataKey="forecast_mw"
             stroke="var(--forecast)"
-            strokeWidth={1.6}
+            strokeWidth={1.7}
+            /* dashed so forecast and actual stay distinct without relying on
+               colour alone */
+            strokeDasharray="5 3"
             dot={false}
             isAnimationActive={false}
             connectNulls={false}

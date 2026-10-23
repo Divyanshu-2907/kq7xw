@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { api } from '../api.js'
 import { useEndpoint } from '../lib/useEndpoint.js'
-import { MW, pct, stampUTC, timeUTC } from '../lib/format.js'
+import { MW, dayUTC, pct, stampUTC, timeUTC } from '../lib/format.js'
 import { ChartSkeleton, ErrorState, Info } from '../components/States.jsx'
 
 // "Plan on X MW": the number you can actually commit to, and what it costs you
@@ -21,7 +21,12 @@ const RATIOS = [1, 2, 3, 5, 10]
 
 // Half-hourly periods: MW held for half an hour is MWh/2.
 const toMWh = (points, key) =>
-  points.reduce((sum, p) => sum + (p[key] ?? 0) * 0.5, 0)
+  points.reduce((sum, p) => sum + Math.max(0, p[key] ?? 0) * 0.5, 0)
+
+// At high confidence on a badly over-forecast period the quantile can land
+// below zero. Negative wind is not something a desk can plan on, so it is shown
+// and counted as zero -- "count on nothing here" -- rather than as a negative.
+const floorAtZero = (v) => (v == null ? null : Math.max(0, v))
 
 function PlanTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -33,12 +38,20 @@ function PlanTooltip({ active, payload }) {
         <dt>Forecast</dt>
         <dd>{MW(d.forecast_mw)}</dd>
         <dt>Plan</dt>
-        <dd>{MW(d.plan_mw)}</dd>
+        <dd>
+          {MW(d.plan_mw)}
+          {d.plan_raw_mw != null && d.plan_raw_mw < 0 ? ' *' : ''}
+        </dd>
         <dt>Cost-aware</dt>
         <dd>{MW(d.cost_mw)}</dd>
         <dt>Actual</dt>
         <dd>{MW(d.actual_mw)}</dd>
       </dl>
+      {d.plan_raw_mw != null && d.plan_raw_mw < 0 && (
+        <div className="tip-foot">
+          * the quantile landed below zero here, so the plan is nothing
+        </div>
+      )}
       {d.actual_mw != null && d.plan_mw != null && (
         <div className="tip-foot">
           {d.actual_mw < d.plan_mw
@@ -71,15 +84,29 @@ export default function Plan({ params, confidence, costRatio, patch }) {
       rows.set(p.start_time, {
         ...p,
         t: new Date(p.start_time).getTime(),
-        plan_mw: p.plan_mw,
+        plan_mw: floorAtZero(p.plan_mw),
+        plan_raw_mw: p.plan_mw,
       })
     }
     for (const p of cost.data?.points ?? []) {
       const row = rows.get(p.start_time)
-      if (row) row.cost_mw = p.plan_mw
+      if (row) row.cost_mw = floorAtZero(p.plan_mw)
     }
     return [...rows.values()].sort((a, b) => a.t - b.t)
   }, [plan.data, cost.data])
+
+  const multiDay =
+    data.length > 1 && data.at(-1).t - data[0].t > 36 * 3600 * 1000
+  const ticks = useMemo(() => {
+    if (!multiDay || !data.length) return undefined
+    const out = data
+      .filter((d) => {
+        const dt = new Date(d.t)
+        return dt.getUTCHours() === 0 && dt.getUTCMinutes() === 0
+      })
+      .map((d) => d.t)
+    return out.length > 1 ? out : undefined
+  }, [data, multiDay])
 
   const totals = plan.data?.totals
   const costTotals = cost.data?.totals
@@ -183,14 +210,16 @@ export default function Plan({ params, confidence, costRatio, patch }) {
                 <i className="swatch" style={{ background: 'var(--actual)' }} /> Actual
               </span>
               <span>
-                <i className="swatch" style={{ background: 'var(--forecast)' }} /> Forecast
+                <i className="swatch dashed" style={{ background: 'var(--forecast)' }} /> Forecast
+                (dashed)
               </span>
               <span>
                 <i className="swatch" style={{ background: 'var(--good)' }} /> Plan at{' '}
                 {Math.round(confidence * 100)}%
               </span>
               <span>
-                <i className="swatch" style={{ background: 'var(--warn)' }} /> Cost-aware at{' '}
+                <i className="swatch dotted" style={{ background: 'var(--warn)' }} /> Cost-aware
+                (dotted) at{' '}
                 {costRatio}×
               </span>
               <span style={{ color: 'var(--text-faint)' }}>axis GW · values MW</span>
@@ -203,7 +232,10 @@ export default function Plan({ params, confidence, costRatio, patch }) {
                   type="number"
                   scale="time"
                   domain={['dataMin', 'dataMax']}
-                  tickFormatter={(t) => timeUTC(new Date(t).toISOString())}
+                  ticks={ticks}
+                  tickFormatter={(t) =>
+                    multiDay ? dayUTC(new Date(t).toISOString()) : timeUTC(new Date(t).toISOString())
+                  }
                   minTickGap={34}
                   tickLine={false}
                   stroke="var(--line)"
@@ -219,9 +251,9 @@ export default function Plan({ params, confidence, costRatio, patch }) {
                 <Line dataKey="actual_mw" stroke="var(--actual)" strokeWidth={1.3}
                       dot={false} isAnimationActive={false} />
                 <Line dataKey="forecast_mw" stroke="var(--forecast)" strokeWidth={1.4}
-                      dot={false} isAnimationActive={false} />
-                <Line dataKey="plan_mw" stroke="var(--good)" strokeWidth={1.8}
-                      dot={false} isAnimationActive={false} />
+                      strokeDasharray="5 3" dot={false} isAnimationActive={false} />
+                <Line dataKey="plan_mw" stroke="var(--good)" strokeWidth={2}
+                      strokeDasharray="1 0" dot={false} isAnimationActive={false} />
                 <Line dataKey="cost_mw" stroke="var(--warn)" strokeWidth={1.5}
                       strokeDasharray="4 3" dot={false} isAnimationActive={false} />
               </ComposedChart>

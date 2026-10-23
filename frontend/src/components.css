@@ -99,12 +99,13 @@
 }
 
 .timeline .gate-label {
+  /* text, so it uses the AA-safe token */
   position: absolute;
   top: 9px;
   left: 4px;
   white-space: nowrap;
   font-size: 9.5px;
-  color: var(--warn);
+  color: var(--warn-text);
 }
 
 .vintage-stamp {
@@ -120,7 +121,7 @@
 }
 
 .vintage-tag { font-size: 10.5px; color: var(--text-faint); }
-.vintage-stamp.late .vintage-tag { color: var(--warn); }
+.vintage-stamp.late .vintage-tag { color: var(--warn-text); }
 
 .narrative p { margin: 0 0 6px; font-size: 13px; line-height: 1.5; }
 .narrative strong { font-variant-numeric: tabular-nums; }
@@ -162,7 +163,7 @@ table.misses td {
 
 table.misses th.r, table.misses td.r { text-align: right; }
 table.misses td.dim, table.misses .dim { color: var(--text-faint); }
-table.misses td.over { color: var(--warn); }
+table.misses td.over { color: var(--warn-text); }
 table.misses td.under { color: var(--forecast); }
 
 table.misses tbody tr[role="button"] { cursor: pointer; }
@@ -183,7 +184,7 @@ table.misses tbody tr[role="button"]:focus-visible {
   color: var(--text-dim);
 }
 
-.tag.timing { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); color: var(--warn); }
+.tag.timing { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); color: var(--warn-text); }
 .tag.size { border-color: color-mix(in srgb, var(--forecast) 45%, var(--line)); color: var(--forecast); }
 
 .takeaway {
@@ -242,7 +243,7 @@ table.misses tbody tr[role="button"]:focus-visible {
 }
 
 .drawer-stats .big { font-size: 17px; font-weight: 600; }
-.drawer-stats .over { color: var(--warn); }
+.drawer-stats .over { color: var(--warn-text); }
 .drawer-stats .under { color: var(--forecast); }
 
 /* -------------------------------------------------------- quality panels */
@@ -260,7 +261,7 @@ table.misses tbody tr[role="button"]:focus-visible {
 
 .chip.odd {
   border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
-  color: var(--warn);
+  color: var(--warn-text);
 }
 
 dl.handling { margin: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -323,4 +324,67 @@ dl.handling dd { margin: 0; font-size: 12px; color: var(--text-dim); line-height
 .tip-grid dd {
   overflow-wrap: anywhere;
   min-width: 0;
+}
+
+/* Line style is carried in the legend too, so the chart never depends on
+   colour alone to tell forecast from actual. */
+.swatch.dashed {
+  background: none !important;
+  border-top: 3px dashed var(--forecast);
+  height: 0;
+  width: 14px;
+}
+
+.swatch.dotted {
+  background: none !important;
+  border-top: 3px dotted var(--warn);
+  height: 0;
+  width: 14px;
+}
+
+/* --------------------------------------------------------------- onboarding */
+.howto {
+  background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--forecast) 32%, var(--line));
+  border-radius: var(--radius);
+  padding: 14px 16px 12px;
+}
+
+.howto-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.howto h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+
+.howto-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.howto-steps strong { color: var(--text); font-weight: 600; }
+
+.howto-foot {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+@media (max-width: 620px) {
+  .howto { padding: 12px 12px 10px; }
+  .howto-steps { font-size: 12px; padding-left: 18px; }
 }

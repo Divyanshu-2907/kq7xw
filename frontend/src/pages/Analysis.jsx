@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   Bar,
   BarChart,
@@ -87,6 +88,15 @@ export default function Analysis({ params }) {
     [JSON.stringify(params)],
   )
 
+  const hourText = useMemo(
+    () => (hour.data ? hourTakeaway(hour.data.rows) : null),
+    [hour.data],
+  )
+  const levelText = useMemo(
+    () => (level.data ? levelTakeaway(level.data.rows) : null),
+    [level.data],
+  )
+
   return (
     <>
       <section className="panel">
@@ -125,7 +135,7 @@ export default function Analysis({ params }) {
                 <Bar dataKey="mae_mw" fill="var(--forecast)" isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
-            <p className="takeaway">{hourTakeaway(hour.data.rows)}</p>
+            <p className="takeaway">{hourText}</p>
           </>
         )}
       </section>
@@ -179,7 +189,7 @@ export default function Analysis({ params }) {
             <p className="panel-note" style={{ marginLeft: 2 }}>
               Buckets in GW of forecast wind. MAE in MW.
             </p>
-            <p className="takeaway">{levelTakeaway(level.data.rows)}</p>
+            <p className="takeaway">{levelText}</p>
           </>
         )}
       </section>

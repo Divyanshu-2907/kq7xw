@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
   CartesianGrid,
   ComposedChart,
@@ -55,13 +55,15 @@ export default function SlotDrawer({ time, params, onClose }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  if (!time) return null
-
   const d = slot.data
-  const rows = (d?.forecasts ?? []).map((f) => ({
-    ...f,
-    t: new Date(f.publish_time).getTime(),
-  }))
+  const rows = useMemo(
+    () =>
+      (d?.forecasts ?? []).map((f) => ({
+        ...f,
+        t: new Date(f.publish_time).getTime(),
+      })),
+    [d],
+  )
   const live = rows.find((r) => r.is_live)
   const cutoffMs = d ? new Date(d.cutoff).getTime() : null
 
@@ -69,12 +71,16 @@ export default function SlotDrawer({ time, params, onClose }) {
   // zero-based axis would draw them as one flat line and hide the revisions
   // this view exists to show. The actual has to stay in frame too, since the
   // gap between it and the forecasts is the story.
-  const values = rows.map((r) => r.forecast_mw).filter((v) => v != null)
-  if (d?.actual_mw != null) values.push(d.actual_mw)
-  const pad = values.length ? Math.max(400, (Math.max(...values) - Math.min(...values)) * 0.15) : 0
-  const domain = values.length
-    ? [Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad]
-    : [0, 'auto']
+  const domain = useMemo(() => {
+    const values = rows.map((r) => r.forecast_mw).filter((v) => v != null)
+    if (d?.actual_mw != null) values.push(d.actual_mw)
+    if (!values.length) return [0, 'auto']
+    const pad = Math.max(400, (Math.max(...values) - Math.min(...values)) * 0.15)
+    return [Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad]
+  }, [rows, d])
+
+  // Every hook above runs unconditionally; the early return comes after them.
+  if (!time) return null
 
   return (
     <>
@@ -122,8 +128,8 @@ export default function SlotDrawer({ time, params, onClose }) {
 
             <div className="legend" style={{ marginTop: 10 }}>
               <span>
-                <i className="swatch" style={{ background: 'var(--forecast)' }} /> Forecast by
-                publication
+                <i className="swatch dashed" style={{ background: 'var(--forecast)' }} /> Forecast
+                by publication (dashed)
               </span>
               <span>
                 <i className="swatch" style={{ background: 'var(--actual)' }} /> Actual
@@ -188,6 +194,7 @@ export default function SlotDrawer({ time, params, onClose }) {
                   dataKey="forecast_mw"
                   stroke="var(--forecast)"
                   strokeWidth={1.6}
+                  strokeDasharray="5 3"
                   dot={{ r: 2 }}
                   isAnimationActive={false}
                 />
