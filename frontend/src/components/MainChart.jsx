@@ -50,7 +50,7 @@ function ChartTooltip({ active, payload }) {
   )
 }
 
-export default function MainChart({ points, height = 300 }) {
+export default function MainChart({ points, height = 300, onPickSlot }) {
   const data = useMemo(
     () =>
       points.map((p) => ({
@@ -94,7 +94,15 @@ export default function MainChart({ points, height = 300 }) {
         <span style={{ color: 'var(--text-faint)' }}>axis GW · values MW</span>
       </div>
       <ResponsiveContainer width="100%" height={height}>
-        <ComposedChart data={data} margin={{ top: 6, right: 8, left: 2, bottom: 0 }}>
+        <ComposedChart
+          data={data}
+          margin={{ top: 6, right: 8, left: 2, bottom: 0 }}
+          onClick={(e) => {
+            const t = e?.activePayload?.[0]?.payload?.start_time
+            if (t && onPickSlot) onPickSlot(t)
+          }}
+          style={onPickSlot ? { cursor: 'pointer' } : undefined}
+        >
           <CartesianGrid strokeDasharray="2 4" vertical={false} />
           <XAxis
             dataKey="t"
