@@ -64,5 +64,3 @@ export const api = {
   misses: (p, o) => get('/api/misses', p, o),
   dataQuality: (o) => get('/api/data-quality', {}, o),
 }
-
-export const API_BASE = BASE

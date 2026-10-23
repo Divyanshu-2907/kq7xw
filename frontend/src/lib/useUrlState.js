@@ -35,10 +35,13 @@ export function useUrlState(defaults) {
     const onPop = () => setState(read(defaults))
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
+    // `defaults` is a module-level constant; re-subscribing on it would churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     write(state, defaults)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
   const patch = useCallback((changes) => {

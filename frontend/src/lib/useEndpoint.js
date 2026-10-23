@@ -22,6 +22,9 @@ export function useEndpoint(fn, deps, { enabled = true } = {}) {
         setState({ loading: false, data: null, error: err })
       })
     return () => ac.abort()
+    // `fn` is an inline closure recreated every render, so the caller's `deps`
+    // are the real inputs; spreading them is deliberate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, nonce, enabled])
 
   return { ...state, retry: () => setNonce((n) => n + 1) }
