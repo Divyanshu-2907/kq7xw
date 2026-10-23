@@ -21,7 +21,7 @@ import { ChartSkeleton, ErrorState, Info } from '../components/States.jsx'
 const TRAIL = 5 // how many older vintages fade behind the current one
 const STEP_MS = 850
 
-export default function Replay({ day, cutoff, onPickDay, meta }) {
+export default function Replay({ day, cutoff }) {
   const replay = useEndpoint(
     ({ signal }) => api.replay({ day, cutoff }, { signal }),
     [day, cutoff],
@@ -30,8 +30,10 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
   const [playing, setPlaying] = useState(false)
   const timer = useRef(null)
 
-  const vintages = replay.data?.vintages ?? []
-  const publishTimes = replay.data?.publish_times ?? []
+  // Memoised so the hooks below can list them as dependencies: a fresh []
+  // each render would retrigger the effects forever.
+  const vintages = useMemo(() => replay.data?.vintages ?? [], [replay.data])
+  const publishTimes = useMemo(() => replay.data?.publish_times ?? [], [replay.data])
   const last = publishTimes.length - 1
 
   // Open on the last vintage that was actually available at the gate: that is
@@ -41,7 +43,33 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
     const eligible = vintages.filter((v) => v.eligible_at_cutoff).length
     setIdx(eligible > 0 ? eligible - 1 : 0)
     setPlaying(false)
-  }, [replay.data])
+  }, [replay.data, vintages])
+
+  // Arrow keys step through publications without having to focus the slider.
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = e.target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        setPlaying(false)
+        setIdx((i) => Math.min(last, Math.max(0, i + (e.key === 'ArrowRight' ? 1 : -1))))
+      } else if (e.key === 'Home') {
+        e.preventDefault()
+        setPlaying(false)
+        setIdx(0)
+      } else if (e.key === 'End') {
+        e.preventDefault()
+        setPlaying(false)
+        setIdx(last)
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        setPlaying((p) => !p)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [last])
 
   useEffect(() => {
     if (!playing) return
@@ -85,7 +113,7 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
       }
     }
     return [...rows.values()].sort((a, b) => a.t - b.t)
-  }, [replay.data, idx, now])
+  }, [replay.data, idx, now, current, vintages])
 
   // Narrative hour: the period the DESK got most wrong, judged by the vintage
   // that was live at the gate. Judging it by a vintage published after delivery
@@ -105,7 +133,7 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
       if (!best || err > best.err) best = { iso: a.start_time, err, actual: a.actual_mw }
     }
     return best
-  }, [replay.data])
+  }, [replay.data, vintages])
 
   const focusForecast = focus && current
     ? current.points.find((p) => p.start_time === focus.iso)?.forecast_mw
@@ -131,7 +159,8 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
         <div className="panel-head">
           <span className="panel-title">Decision Replay</span>
           <span className="panel-note">
-            {dayUTC(`${day}T00:00Z`)} delivery · what was on screen at each publication
+            {dayUTC(`${day}T00:00Z`)} delivery · what was on screen at each
+            publication · ← → to step, space to play
           </span>
           <Info>
             Drag or play to move through every forecast published for this day.
@@ -157,6 +186,7 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
               min={0}
               max={last}
               value={idx}
+              aria-valuetext={`Published ${stampUTC(publishTimes[idx])}`}
               onChange={(e) => {
                 setPlaying(false)
                 setIdx(Number(e.target.value))
@@ -251,6 +281,7 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
               dataKey="current"
               stroke="var(--forecast)"
               strokeWidth={2}
+              strokeDasharray="5 3"
               dot={false}
               isAnimationActive={false}
               connectNulls
@@ -268,7 +299,8 @@ export default function Replay({ day, cutoff, onPickDay, meta }) {
 
         <div className="legend" style={{ marginTop: 4 }}>
           <span>
-            <i className="swatch" style={{ background: 'var(--forecast)' }} /> This vintage
+            <i className="swatch dashed" style={{ background: 'var(--forecast)' }} /> This
+            vintage (dashed)
           </span>
           <span>
             <i className="swatch" style={{ background: 'var(--forecast)', opacity: 0.35 }} />{' '}
