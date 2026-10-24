@@ -1,0 +1,29 @@
+# One command for the whole app: docker compose up --build
+# Then open http://localhost:8080
+
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      # nginx proxies the API same-origin, so no cross-origin grant is needed.
+      # Kept explicit rather than relying on the code default.
+      HEADROOM_CORS_ORIGINS: "http://localhost:8080"
+      HEADROOM_DAY_AHEAD_CUTOFF_LOCAL: "09:20"
+      HEADROOM_FORECAST_ALIGNMENT: "hold"
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Empty: the bundle calls /api/... and nginx forwards it to the backend.
+        VITE_API_BASE: ""
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
