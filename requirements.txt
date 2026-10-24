@@ -1,0 +1,7 @@
+# Runtime dependencies for the Vercel Python function.
+# Deliberately minimal: no uvicorn (Vercel hosts the ASGI app itself), no test
+# or lint tooling, and no pyarrow -- the snapshot is CSV.gz precisely so that
+# pandas needs no Arrow stack and the function stays well inside the size limit.
+fastapi==0.121.1
+pandas==2.3.1
+pydantic==2.12.4
