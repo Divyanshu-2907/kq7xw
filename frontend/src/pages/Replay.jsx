@@ -231,7 +231,7 @@ export default function Replay({ day, cutoff }) {
         </div>
 
         <ResponsiveContainer width="100%" height={330}>
-          <ComposedChart data={data} margin={{ top: 6, right: 10, left: 2, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 20, right: 10, left: 2, bottom: 0 }}>
             <CartesianGrid strokeDasharray="2 4" vertical={false} />
             <XAxis
               dataKey="t"
