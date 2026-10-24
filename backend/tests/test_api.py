@@ -48,8 +48,19 @@ def test_meta_reports_the_real_range_and_limits():
     assert "MAPE" not in body["error_convention"]
 
 
+def test_interactive_docs_live_under_the_api_prefix():
+    """Only /api/* is rewritten to the function on Vercel, so the docs must be
+    there too or they 404 behind the SPA fallback."""
+    assert client.get("/api/docs").status_code == 200
+    assert client.get("/api/redoc").status_code == 200
+    assert client.get("/api/openapi.json").status_code == 200
+    # the defaults must NOT be served, or the paths above are pointless
+    assert client.get("/docs").status_code == 404
+    assert client.get("/openapi.json").status_code == 404
+
+
 def test_openapi_documents_every_endpoint_with_a_description():
-    spec = get("/openapi.json")
+    spec = get("/api/openapi.json")
     paths = spec["paths"]
     expected = {
         "/api/health", "/api/meta", "/api/series", "/api/metrics",

@@ -78,6 +78,12 @@ BIAS_CAVEAT = (
 app = FastAPI(
     title="Headroom API",
     version="0.1.0",
+    # Everything the function serves has to sit under /api, because that is the
+    # only prefix vercel.json rewrites to it; the default /docs would fall
+    # through to the SPA and 404.
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
     summary="How much wind you can count on before the day-ahead auction closes.",
     description=(
         "National GB wind: Elexon BMRS FUELHH actuals against WINDFOR forecasts, "
