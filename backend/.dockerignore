@@ -1,0 +1,14 @@
+tests
+__pycache__
+**/__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.hypothesis
+.venv
+venv
+scripts
+ruff.toml
+pytest.ini
+Dockerfile
+.dockerignore

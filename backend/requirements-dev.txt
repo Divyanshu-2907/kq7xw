@@ -1,0 +1,7 @@
+# Everything in the runtime image, plus the tooling to test and lint it.
+-r requirements.txt
+
+httpx==0.28.1
+pytest==9.0.1
+hypothesis==6.170.8
+ruff==0.17.2

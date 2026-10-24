@@ -1,7 +1,6 @@
-fastapi
-uvicorn[standard]
-pandas
-pydantic
-httpx
-pytest
-hypothesis
+# Runtime only. This is what the Docker image installs, so test and lint tooling
+# must not appear here; see requirements-dev.txt for that.
+fastapi==0.121.1
+pandas==2.3.1
+pydantic==2.12.4
+uvicorn[standard]==0.38.0
