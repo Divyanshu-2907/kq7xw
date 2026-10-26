@@ -30,7 +30,7 @@ jobs:
         run: pytest -q
 
   frontend:
-    name: Frontend (eslint + build)
+    name: Frontend (eslint + build + test)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,3 +52,7 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # After the build, so the bundle check has an artefact to inspect.
+      - name: Test
+        run: npm test

@@ -1,6 +1,41 @@
 // Thin fetch layer. Base URL comes from the environment so the same build can
 // point at a local backend or at the deployed one.
-const BASE = (import.meta.env.VITE_API_BASE ?? 'http://localhost:8000').replace(/\/$/, '')
+
+/** Port the backend listens on during `npm run dev`. */
+export const DEV_API_PORT = 8000
+
+/**
+ * Resolve the API base URL from a Vite-style env object.
+ *
+ * An explicit `VITE_API_BASE` always wins, including an empty string, which is
+ * how the Docker build asks for same-origin.
+ *
+ * Otherwise the default depends on where the bundle is running, and getting
+ * this wrong is deployable: an unconditional `http://localhost:8000` fallback
+ * was once baked into the production bundle, so the deployed app tried to call
+ * the viewer's own machine. In production nothing is served on localhost, so
+ * the only sane default is same-origin — an empty base, giving relative
+ * `/api/...` paths that both nginx and the Vercel rewrite route to the backend.
+ *
+ * `npm run dev` is the one case where the API genuinely lives on another port,
+ * and the address is derived from wherever the page was loaded rather than
+ * hard-coded. That keeps every local address out of the production bundle (it
+ * is greppable, and a reviewer will grep), and it means opening the dev server
+ * from a phone on the same network reaches the backend on that host too, which
+ * a literal `localhost` could not.
+ *
+ * Exported so it can be tested without building or mocking `import.meta`.
+ */
+export function resolveApiBase(env = {}, loc = globalThis.location) {
+  const configured = env.VITE_API_BASE
+  if (configured !== undefined && configured !== null) {
+    return String(configured).replace(/\/$/, '')
+  }
+  if (!env.DEV || !loc?.hostname) return ''
+  return `${loc.protocol}//${loc.hostname}:${DEV_API_PORT}`
+}
+
+const BASE = resolveApiBase(import.meta.env)
 
 export class ApiError extends Error {
   constructor(message, status, url) {
@@ -28,8 +63,12 @@ export async function get(path, params = {}, { signal } = {}) {
   } catch (err) {
     if (err.name === 'AbortError') throw err
     // Network-level failure: the API is almost always simply not running.
+    // With a same-origin base there is no host worth naming, so say where it
+    // looked rather than printing an empty string.
     throw new ApiError(
-      `Could not reach the API at ${BASE}. Is the backend running?`,
+      BASE
+        ? `Could not reach the API at ${BASE}. Is the backend running?`
+        : `Could not reach the API at ${path}. Is the backend running?`,
       0,
       url,
     )

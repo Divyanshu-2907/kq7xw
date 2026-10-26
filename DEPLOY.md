@@ -71,7 +71,7 @@ Set any of these only if you want to change behaviour
 | `HEADROOM_DAY_AHEAD_CUTOFF_LOCAL` | `09:20` | Day-ahead gate, Europe/London. `09:50` models the N2EX gate instead of EPEX; `15:30` the half-hourly auction. |
 | `HEADROOM_FORECAST_ALIGNMENT` | `hold` | `hold` scores both half-hours of each hourly forecast; `hourly_points` scores only exact hours. |
 | `HEADROOM_CORS_ORIGINS` | `http://localhost:5173` | Only matters if something off-origin calls the API. The deployed frontend does not. |
-| `VITE_API_BASE` | *(unset → same origin)* | Leave unset on Vercel. Setting it would point the bundle at some other backend. |
+| `VITE_API_BASE` | *(unset → same origin in production)* | Leave unset on Vercel: production builds default to same-origin, so the bundle calls `/api/...` and the rewrite routes it. Setting it would point the bundle at some other backend. |
 
 ### 4. Tell me the URL
 
