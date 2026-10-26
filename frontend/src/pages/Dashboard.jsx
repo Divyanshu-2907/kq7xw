@@ -1,5 +1,6 @@
 import { api } from '../api.js'
 import { useEndpoint } from '../lib/useEndpoint.js'
+import { useIsNarrow } from '../lib/useIsNarrow.js'
 import { dayUTC } from '../lib/format.js'
 import MetricCards from '../components/MetricCards.jsx'
 import MainChart from '../components/MainChart.jsx'
@@ -12,9 +13,20 @@ import {
   Info,
 } from '../components/States.jsx'
 
-export default function Dashboard({ state, params, meta, onPickSlot }) {
+// Order matters here: the number to act on, then the chart it came from.
+// Anything explanatory sits below the fold or behind a control.
+
+export default function Dashboard({ state, params, meta, onPickSlot, onOpenTab }) {
+  // A 420px chart leaves only a sliver visible on a phone.
+  const chartHeight = useIsNarrow() ? 300 : 420
   const series = useEndpoint(
     ({ signal }) => api.series(params, { signal }),
+    [JSON.stringify(params)],
+  )
+  // The hero card's number: what you could have committed to, and whether that
+  // promise held.
+  const plan = useEndpoint(
+    ({ signal }) => api.plan({ ...params, confidence: 0.9 }, { signal }),
     [JSON.stringify(params)],
   )
   const horizons = useEndpoint(({ signal }) => api.errorByHorizon({ signal }), [])
@@ -26,20 +38,35 @@ export default function Dashboard({ state, params, meta, onPickSlot }) {
     state.mode === 'horizon'
       ? `${state.horizon} h before delivery`
       : `${state.cutoff} London, day before delivery`
+  const count = series.data?.metrics?.count
 
   return (
     <>
       {series.loading && !series.data ? (
-        <CardsSkeleton />
+        <CardsSkeleton count={4} />
       ) : series.error ? null : (
-        <MetricCards metrics={series.data?.metrics} />
+        <MetricCards
+          metrics={series.data?.metrics}
+          adjusted={series.data?.adjusted}
+          plan={plan.data}
+          planLoading={plan.loading}
+        />
       )}
+
+      <p className="scope-note">
+        Note: WINDFOR runs ~1.6 GW above FUELHH (dataset scope).{' '}
+        <button type="button" className="linkish" onClick={() => onOpenTab('quality')}>
+          Details →
+        </button>
+      </p>
 
       <section className="panel">
         <div className="panel-head">
           <span className="panel-title">Actual vs live forecast</span>
           <span className="panel-note">
-            {rangeLabel} · cutoff {cutoffLabel} · times UTC
+            {rangeLabel} · cutoff {cutoffLabel}
+            {count ? ` · ${count.toLocaleString('en-GB')} half-hourly periods` : ''} ·
+            times UTC
           </span>
           <Info>
             The forecast line is whichever vintage was newest at the cutoff for
@@ -49,7 +76,7 @@ export default function Dashboard({ state, params, meta, onPickSlot }) {
           </Info>
         </div>
         {series.loading && !series.data ? (
-          <ChartSkeleton height={300} />
+          <ChartSkeleton height={chartHeight} />
         ) : series.error ? (
           <ErrorState error={series.error} onRetry={series.retry} />
         ) : scored.length === 0 ? (
@@ -62,7 +89,7 @@ export default function Dashboard({ state, params, meta, onPickSlot }) {
             }
           />
         ) : (
-          <MainChart points={points} onPickSlot={onPickSlot} />
+          <MainChart points={points} height={chartHeight} onPickSlot={onPickSlot} />
         )}
       </section>
 

@@ -475,12 +475,7 @@ footer {
   .control-horizon { flex: 1 1 100%; }
   .spacer { display: none; }
 
-  /* the theme button would otherwise sit alone on its own row */
-  .topbar > .ghost-btn {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-  }
+
 
   main { padding: 12px 12px 24px; gap: 12px; }
   .panel { padding: 10px 10px 6px; }
@@ -506,4 +501,56 @@ footer {
   }
 
   .chart-tip { min-width: 0; font-size: 11px; }
+}
+
+/* ------------------------------------------------------- first-screen layout */
+/* Content is capped and centred so the chart does not stretch into an
+   unreadable 2:1 strip on a wide monitor. */
+main {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.topbar,
+.tabs,
+footer {
+  /* The bars stay full-bleed; only their contents line up with main. */
+  padding-left: max(16px, calc((100vw - 1400px) / 2));
+  padding-right: max(16px, calc((100vw - 1400px) / 2));
+}
+
+/* The one number a trader should see first. */
+.card.hero {
+  border-color: color-mix(in srgb, var(--forecast) 42%, var(--line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--forecast) 7%, var(--panel)),
+    var(--panel) 65%
+  );
+}
+
+.card.hero .metric-value {
+  font-size: 30px;
+  letter-spacing: -0.02em;
+}
+
+.card.hero .card-label { color: var(--text-dim); }
+
+.on-target { color: var(--good); }
+.off-target { color: var(--warn-text); }
+
+/* Secondary reading on cards the dataset scope offset distorts. */
+.metric-adjust {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 620px) {
+  .card.hero .metric-value { font-size: 26px; }
+  .topbar, .tabs, footer { padding-left: 12px; padding-right: 12px; }
 }

@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Info } from './States.jsx'
-import { MW, hours, signedMW, stampUTC, timeUTC } from '../lib/format.js'
+import { GW, hours, signedGW, stampUTC, timeUTC } from '../lib/format.js'
 
 // Actual against the forecast that was live at the cutoff, with the
 // walk-forward P10-P90 band behind it. Brush to zoom.
@@ -25,16 +25,16 @@ function ChartTooltip({ active, payload }) {
       <div className="chart-tip-head">{stampUTC(d.start_time)}</div>
       <dl className="tip-grid">
         <dt>Actual</dt>
-        <dd>{MW(d.actual_mw)}</dd>
+        <dd>{GW(d.actual_mw)}</dd>
         <dt>Forecast</dt>
-        <dd>{MW(d.forecast_mw)}</dd>
+        <dd>{GW(d.forecast_mw)}</dd>
         <dt>Error</dt>
-        <dd>{signedMW(d.error_mw)}</dd>
+        <dd>{signedGW(d.error_mw)}</dd>
         {d.p10_mw != null && (
           <>
             <dt>P10–P90</dt>
             <dd>
-              {MW(d.p10_mw)} – {MW(d.p90_mw)}
+              {GW(d.p10_mw)} – {GW(d.p90_mw)}
             </dd>
           </>
         )}
@@ -50,7 +50,7 @@ function ChartTooltip({ active, payload }) {
   )
 }
 
-export default function MainChart({ points, height = 300, onPickSlot }) {
+export default function MainChart({ points, height = 420, onPickSlot }) {
   const data = useMemo(
     () =>
       points.map((p) => ({
@@ -92,7 +92,6 @@ export default function MainChart({ points, height = 300, onPickSlot }) {
             from earlier weeks. Actual should land inside the band 80% of the time.
           </Info>
         </span>
-        <span style={{ color: 'var(--text-faint)' }}>axis GW · values MW</span>
       </div>
       <ResponsiveContainer width="100%" height={height}>
         <ComposedChart
@@ -123,8 +122,8 @@ export default function MainChart({ points, height = 300, onPickSlot }) {
             stroke="var(--line)"
           />
           <YAxis
-            tickFormatter={(v) => `${(v / 1000).toFixed(0)}`}
-            width={34}
+            tickFormatter={(v) => `${(v / 1000).toFixed(0)} GW`}
+            width={52}
             tickLine={false}
             stroke="var(--line)"
             domain={[0, 'auto']}
