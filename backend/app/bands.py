@@ -258,3 +258,55 @@ def shortfall_summary(plan: pd.DataFrame) -> dict:
         "mean_surplus_mw": float(gap[~short].mean()) if (~short).any() else 0.0,
         "mean_headroom_left_on_table_mw": float(gap.mean()),
     }
+
+
+# --------------------------------------------------------------------------- #
+# uncertainty on the shortfall rate itself
+# --------------------------------------------------------------------------- #
+#: Resamples. Enough that the interval is stable to ~0.1pp between runs.
+BOOTSTRAP_REPS = 2000
+#: Fixed so the same snapshot always reports the same interval.
+BOOTSTRAP_SEED = 20260101
+#: Below this many days the blocks are too few for the interval to mean much.
+MIN_BOOTSTRAP_DAYS = 5
+
+
+def shortfall_rate_ci(
+    plan: pd.DataFrame,
+    level: float = 0.90,
+    reps: int = BOOTSTRAP_REPS,
+    seed: int = BOOTSTRAP_SEED,
+) -> tuple[float, float] | None:
+    """Block-bootstrap interval for the realised shortfall rate, resampling days.
+
+    Half-hours within a day are anything but independent: one calm evening
+    misses in forty-eight consecutive periods. Resampling individual periods
+    would treat those as forty-eight separate pieces of evidence and report an
+    interval far too tight. Resampling whole days keeps each day's run of
+    correlated outcomes intact, which is the point of a block bootstrap.
+
+    Returns ``(low, high)`` as percentages, or ``None`` when there are too few
+    days to say anything useful.
+    """
+    df = plan.loc[plan["plan_mw"].notna() & plan["actual_mw"].notna()]
+    if df.empty:
+        return None
+
+    day = df["startTime"].dt.floor("D")
+    short = (df["actual_mw"] < df["plan_mw"]).to_numpy()
+    # One block per day: how many periods it holds, and how many fell short.
+    per_day = pd.DataFrame({"day": day.to_numpy(), "short": short})
+    grouped = per_day.groupby("day")["short"].agg(["size", "sum"])
+    counts = grouped["size"].to_numpy(dtype=float)
+    shorts = grouped["sum"].to_numpy(dtype=float)
+    n_days = len(counts)
+    if n_days < MIN_BOOTSTRAP_DAYS:
+        return None
+
+    rng = np.random.default_rng(seed)
+    picks = rng.integers(0, n_days, size=(reps, n_days))
+    rates = shorts[picks].sum(axis=1) / counts[picks].sum(axis=1)
+
+    tail = (1.0 - level) / 2.0
+    lo, hi = np.quantile(rates, [tail, 1.0 - tail])
+    return float(100.0 * lo), float(100.0 * hi)

@@ -13,6 +13,7 @@ from app.bands import (
     newsvendor_quantile,
     plan_at_cost_ratio,
     plan_on,
+    shortfall_rate_ci,
     shortfall_summary,
     walk_forward_bands,
 )
@@ -189,3 +190,55 @@ def test_shortfall_summary_tracks_the_cost_asymmetry():
     neutral = shortfall_summary(plan_at_cost_ratio(banded, 1.0))
     assert cautious["shortfall_rate_pct"] < neutral["shortfall_rate_pct"]
     assert cautious["mean_headroom_left_on_table_mw"] > neutral["mean_headroom_left_on_table_mw"]
+
+
+# --------------------------------------------------------------------------- #
+# uncertainty on the shortfall rate
+# --------------------------------------------------------------------------- #
+def _plan_frame(day_outcomes):
+    """One row per half-hour. day_outcomes[i] is that day's shortfall fraction."""
+    rows = []
+    for d, frac in enumerate(day_outcomes):
+        start = START + pd.Timedelta(days=d)
+        for p in range(48):
+            short = p < round(frac * 48)
+            rows.append({
+                "startTime": start + pd.Timedelta(minutes=30 * p),
+                "plan_mw": 10000.0,
+                "actual_mw": 9000.0 if short else 11000.0,
+            })
+    return pd.DataFrame(rows)
+
+
+def test_day_block_bootstrap_is_much_wider_than_resampling_half_hours():
+    """Shortfalls cluster into whole days, so periods are not independent."""
+    # ten quiet days, two days that miss all day: 16.7% overall
+    frame = _plan_frame([0.0] * 10 + [1.0] * 2)
+    lo, hi = shortfall_rate_ci(frame)
+
+    assert lo < 16.7 < hi
+    # a day-block interval on 12 blocks has to be wide; anything tight here
+    # would mean the blocks were not being resampled
+    assert hi - lo > 20.0
+
+
+def test_the_interval_brackets_the_realised_rate():
+    frame = _plan_frame([0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.25, 0.0, 0.0, 1.0])
+    realised = 100.0 * (frame["actual_mw"] < frame["plan_mw"]).mean()
+    lo, hi = shortfall_rate_ci(frame)
+    assert lo <= realised <= hi
+
+
+def test_a_plan_that_never_falls_short_has_a_zero_interval():
+    lo, hi = shortfall_rate_ci(_plan_frame([0.0] * 10))
+    assert lo == pytest.approx(0.0)
+    assert hi == pytest.approx(0.0)
+
+
+def test_too_few_days_declines_to_report_an_interval():
+    assert shortfall_rate_ci(_plan_frame([0.5] * 3)) is None
+
+
+def test_the_interval_is_reproducible():
+    frame = _plan_frame([0.0, 1.0, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0, 0.25, 0.0])
+    assert shortfall_rate_ci(frame) == shortfall_rate_ci(frame)

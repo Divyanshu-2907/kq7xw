@@ -30,6 +30,7 @@ from .bands import (
     newsvendor_quantile,
     plan_at_cost_ratio,
     plan_on,
+    shortfall_rate_ci,
     walk_forward_bands,
 )
 from .config import (
@@ -55,6 +56,8 @@ MAX_FULL_COVERAGE_HORIZON_H = 42.0
 MAX_HORIZON_H = 72.0
 DEFAULT_HORIZON_H = 24.0
 HORIZON_GRID = [0, 1, 2, 3, 4, 6, 9, 12, 18, 24, 30, 36, 42, 48]
+#: Level of the block-bootstrap interval reported on the shortfall rate.
+SHORTFALL_CI_LEVEL = 0.90
 
 RESOLUTION_NOTE = (
     "FUELHH actuals are half-hourly; WINDFOR forecasts are hourly. The hourly "
@@ -283,6 +286,7 @@ def _metrics(df: pd.DataFrame) -> s.Metrics:
 def _plan_totals(df: pd.DataFrame) -> s.PlanTotals:
     gap = df["actual_mw"] - df["plan_mw"]
     short = gap < 0
+    ci = shortfall_rate_ci(df, level=SHORTFALL_CI_LEVEL)
     return s.PlanTotals(
         periods=int(len(df)),
         mean_forecast_mw=_f(df["forecast_mw"].mean()),
@@ -293,6 +297,9 @@ def _plan_totals(df: pd.DataFrame) -> s.PlanTotals:
         mean_shortfall_mw=_f(-gap[short].mean()) if short.any() else 0.0,
         worst_shortfall_mw=_f(-gap.min()) if short.any() else 0.0,
         mean_headroom_left_on_table_mw=_f(gap.mean()),
+        shortfall_ci_low_pct=_f(ci[0]) if ci else None,
+        shortfall_ci_high_pct=_f(ci[1]) if ci else None,
+        shortfall_ci_level=SHORTFALL_CI_LEVEL if ci else None,
     )
 
 

@@ -227,6 +227,16 @@ class PlanTotals(Base):
     mean_shortfall_mw: float | None
     worst_shortfall_mw: float | None
     mean_headroom_left_on_table_mw: float | None
+    shortfall_ci_low_pct: float | None = Field(
+        default=None,
+        description="Lower bound of a block-bootstrap interval on the shortfall "
+        "rate, resampling whole days because half-hours within a day are "
+        "correlated. None when there are too few days to say anything.",
+    )
+    shortfall_ci_high_pct: float | None = None
+    shortfall_ci_level: float | None = Field(
+        default=None, description="Confidence level of that interval, e.g. 0.90."
+    )
 
 
 class PlanResponse(Base):
