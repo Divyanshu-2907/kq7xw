@@ -283,6 +283,30 @@ def _metrics(df: pd.DataFrame) -> s.Metrics:
                         for k, v in compute_metrics(df).items()})
 
 
+@lru_cache(maxsize=128)
+def _plan_summary(
+    mode: str, horizon_h: float | None, cutoff_str: str,
+    confidence: float | None, cost_ratio: float | None,
+    lo: pd.Timestamp, hi: pd.Timestamp,
+) -> tuple[s.PlanTotals, s.PlanTotals | None]:
+    """Both readings for one parameter set, computed once.
+
+    The frame behind this is already cached, but the totals were not, so the
+    block bootstrap re-ran on every request -- twice, once per reading. It is
+    deterministic given the same rows, so it belongs behind the cache.
+    """
+    df = _slice(_full_plan(mode, horizon_h, cutoff_str, confidence, cost_ratio), lo, hi)
+    usable = df.loc[df["plan_mw"].notna() & df["actual_mw"].notna()]
+    # The first week's bands borrow from the whole sample, so a shortfall rate
+    # that includes them flatters the method. Report both, the same way
+    # /api/calibration already drops warm-up rows.
+    leak_free = usable.loc[usable["band_basis"] != "warm-up"]
+    return (
+        _plan_totals(usable),
+        _plan_totals(leak_free) if len(leak_free) else None,
+    )
+
+
 def _plan_totals(df: pd.DataFrame) -> s.PlanTotals:
     gap = df["actual_mw"] - df["plan_mw"]
     short = gap < 0
@@ -523,11 +547,7 @@ def plan(
     if confidence is not None and cost_ratio is not None:
         _fail("give either confidence or cost_ratio, not both.")
     df = _slice(_full_plan(m, h, c, confidence, cost_ratio), lo, hi)
-    usable = df.loc[df["plan_mw"].notna() & df["actual_mw"].notna()]
-    # The first week's bands borrow from the whole sample, so a shortfall rate
-    # that includes them flatters the method. Report both, the same way
-    # /api/calibration already drops warm-up rows.
-    leak_free = usable.loc[usable["band_basis"] != "warm-up"]
+    totals, walk_forward = _plan_summary(m, h, c, confidence, cost_ratio, lo, hi)
     q = newsvendor_quantile(cost_ratio) if cost_ratio is not None else None
     return s.PlanResponse(
         selection=_selection(m, h, c, lo, hi),
@@ -535,8 +555,8 @@ def plan(
         cost_ratio=cost_ratio,
         newsvendor_q=q,
         wind_quantile=(1.0 - q) if q is not None else None,
-        totals=_plan_totals(usable),
-        walk_forward=_plan_totals(leak_free) if len(leak_free) else None,
+        totals=totals,
+        walk_forward=walk_forward,
         points=[
             s.PlanPoint(
                 start_time=_t(r.startTime), lead_h=_f(r.lead_h),
