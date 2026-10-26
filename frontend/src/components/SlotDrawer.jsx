@@ -50,10 +50,15 @@ export default function SlotDrawer({ time, params, onClose }) {
   )
 
   useEffect(() => {
+    // Only while the drawer is open. A listener that fires when it is closed
+    // writes to URL state on every stray Escape, and the synchronous re-render
+    // that causes tears down other components' Escape handlers mid-dispatch --
+    // which silently stopped the how-to popover closing on Escape.
+    if (!time) return undefined
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [time, onClose])
 
   const d = slot.data
   const rows = useMemo(
