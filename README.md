@@ -11,7 +11,7 @@ forecasts have historically been at that notice period, and turns the error
 distribution into a single number — *plan on X MW* — that you can take into the
 auction. Built on Elexon BMRS national wind data for January 2026.
 
-**Live app:** `<PASTE VERCEL URL HERE>`
+**Live app:** <https://kq7xw.vercel.app>
 
 ---
 
@@ -37,6 +37,7 @@ was **20,942 MW**. The wind delivered **14,048 MW**.
 
 - [FINDINGS.md](FINDINGS.md) — a one-page brief for the desk, in plain English
 - [DEPLOY.md](DEPLOY.md) — running it with Docker, and deploying to Vercel
+- [DESIGN_NOTES.md](DESIGN_NOTES.md) — the decisions most worth questioning, answered
 - [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) — the walkthrough script
 
 ---
