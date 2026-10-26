@@ -15,8 +15,11 @@ import Quality from './pages/Quality.jsx'
 
 const DEFAULTS = {
   tab: 'dashboard',
-  start: '2026-01-05',
-  end: '2026-01-11',
+  // The whole month: the hero card then opens on the full-month calibration
+  // rather than one week's, which is the figure worth leading with. URL params
+  // still override, and defaults stay out of the URL so shared links are short.
+  start: '2026-01-01',
+  end: '2026-01-31',
   mode: 'horizon',
   horizon: 24,
   cutoff: '09:20',
