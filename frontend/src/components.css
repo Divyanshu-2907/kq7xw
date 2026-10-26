@@ -488,3 +488,12 @@ dl.handling dd { margin: 0; font-size: 12px; color: var(--text-dim); line-height
 }
 
 .prose-list strong { color: var(--text); font-weight: 600; }
+
+/* Only an optimistic miss is flagged; covering more often than promised is fine. */
+.grade-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+}
+
+.off-target-bad { color: var(--bad); }

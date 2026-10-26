@@ -1,5 +1,6 @@
 import { Info } from './States.jsx'
 import { GW, MW, pct, signedMW } from '../lib/format.js'
+import { gradeShortfall } from '../lib/grade.js'
 
 // The first thing a trader sees. The hero card is the number they can act on;
 // the rest explain how much to trust it. Each card carries its unit, and the
@@ -17,6 +18,11 @@ export default function MetricCards({ metrics, adjusted, plan, planLoading }) {
   const all = plan?.totals
   const t = plan?.walk_forward ?? all
   const shortfall = t?.shortfall_rate_pct
+  const target = plan?.confidence != null ? (1 - plan.confidence) * 100 : 10
+  const grade = gradeShortfall(shortfall, target)
+  const ciLow = t?.shortfall_ci_low_pct
+  const ciHigh = t?.shortfall_ci_high_pct
+  const ciCoversTarget = ciLow != null && ciHigh != null && ciLow <= target && target <= ciHigh
   const warmupExcluded = Boolean(plan?.walk_forward) && all
     ? all.periods - plan.walk_forward.periods
     : 0
@@ -30,6 +36,20 @@ export default function MetricCards({ metrics, adjusted, plan, planLoading }) {
             The megawatts you could have committed to at 90% confidence: the
             forecast minus the error it has historically made at this notice
             period.
+            {ciLow != null && (
+              <>
+                {' '}The realised rate is {pct(shortfall)} (
+                {((t.shortfall_ci_level ?? 0.9) * 100).toFixed(0)}% CI {pct(ciLow)}–
+                {pct(ciHigh)}), from a bootstrap that resamples whole days,
+                because half-hours within a day miss together.
+                {ciCoversTarget && (
+                  <>
+                    {' '}That interval contains the {target.toFixed(0)}% target,
+                    so the gap is within sampling noise.
+                  </>
+                )}
+              </>
+            )}
             {t?.periods != null && (
               <>
                 {' '}Measured over {t.periods.toLocaleString('en-GB')} periods
@@ -55,14 +75,15 @@ export default function MetricCards({ metrics, adjusted, plan, planLoading }) {
         </div>
         <div className="metric-plain">
           {shortfall == null ? (
-            'at 90% confidence'
+            `at ${(100 - target).toFixed(0)}% confidence`
           ) : (
             <>
               wind fell below this in{' '}
-              <strong className={Math.abs(shortfall - 10) <= 3 ? 'on-target' : 'off-target'}>
-                {pct(shortfall)}
-              </strong>{' '}
-              of periods (target 10%)
+              <strong className={grade?.tone}>{pct(shortfall)}</strong> of periods
+              (target {target.toFixed(0)}%)
+              {grade?.label && (
+                <span className={`grade-note ${grade.tone}`}>{grade.label}</span>
+              )}
             </>
           )}
         </div>
