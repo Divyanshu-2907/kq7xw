@@ -11,8 +11,15 @@ function ScopeLine({ children }) {
 
 export default function MetricCards({ metrics, adjusted, plan, planLoading }) {
   const m = metrics ?? {}
-  const t = plan?.totals
+  // The first week's bands borrow from the whole sample, so its periods are not
+  // leakage-free. Lead with the walk-forward reading and keep the other for
+  // the tooltip, rather than quietly showing the flattering one.
+  const all = plan?.totals
+  const t = plan?.walk_forward ?? all
   const shortfall = t?.shortfall_rate_pct
+  const warmupExcluded = Boolean(plan?.walk_forward) && all
+    ? all.periods - plan.walk_forward.periods
+    : 0
 
   return (
     <div className="cards">
@@ -20,9 +27,27 @@ export default function MetricCards({ metrics, adjusted, plan, planLoading }) {
         <div className="card-label">
           Plan on{' '}
           <Info>
-            The megawatts you could have committed to for this selection, at 90%
-            confidence: the forecast minus the error it has historically made at
-            this notice period, learned only from earlier weeks.
+            The megawatts you could have committed to at 90% confidence: the
+            forecast minus the error it has historically made at this notice
+            period.
+            {t?.periods != null && (
+              <>
+                {' '}Measured over {t.periods.toLocaleString('en-GB')} periods
+                whose bands were built only from earlier weeks.
+                {warmupExcluded > 0 && (
+                  <>
+                    {' '}The first {warmupExcluded.toLocaleString('en-GB')}{' '}
+                    periods are excluded: with no earlier data to learn from,
+                    their bands borrow from the whole month, which would flatter
+                    the result
+                    {all?.shortfall_rate_pct != null && (
+                      <> — including them gives {pct(all.shortfall_rate_pct)}</>
+                    )}
+                    .
+                  </>
+                )}
+              </>
+            )}
           </Info>
         </div>
         <div className="metric-value num hero-value">
