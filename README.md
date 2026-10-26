@@ -294,15 +294,21 @@ symmetric in both directions.
 
 ### What you could have counted on
 
+Measured walk-forward: the first week is excluded, because with no earlier
+errors to learn from its bands borrow from the whole month and would flatter
+every figure here. That leaves **1,152 of 1,488 periods** — the same sample the
+calibration figures use.
+
 | Confidence | Plan on | Below forecast by | Actually fell short |
 |---|---|---|---|
-| 50% | 11,773.5 MW | 1,659.2 MW | 53.4% of periods |
-| 80% | 9,939.1 MW | 3,493.6 MW | 19.6% |
-| **90%** | **9,059.5 MW** | 4,373.2 MW | **10.3%** |
-| 95% | 8,338.3 MW | 5,094.3 MW | 6.9% |
+| 50% | 11,383.0 MW | 1,635.0 MW | 53.8% of periods |
+| 80% | 9,494.1 MW | 3,523.9 MW | 18.2% |
+| **90%** | **8,644.0 MW** | 4,374.0 MW | **11.5%** |
+| 95% | 7,971.9 MW | 5,046.1 MW | 8.7% |
 
-At 90% confidence the realised shortfall rate was **10.3%** against a promised
-10% — the headline result of the whole project.
+At 90% confidence the realised shortfall rate was **11.5%** against a promised
+10% — slightly under-covering, and the headline result of the whole project.
+Including the warm-up week would read 10.3%, which looks better and means less.
 
 ### The worst day
 

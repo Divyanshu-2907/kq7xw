@@ -17,26 +17,28 @@ single figure. It is not a bad forecast — it is a forecast of weather, 24 to 4
 hours out — but a plan built on the headline number alone is wrong by about two
 gigawatts on an average day.
 
-## 2. At 90% confidence, you could have counted on 9,060 MW
+## 2. At 90% confidence, you could have counted on 8,644 MW
 
 This is the output that matters. Taking the forecast and subtracting the error it
 has historically made at that notice period, the figure you could have committed
-to with 90% confidence averaged **9,060 MW** — about **4,373 MW below** the
+to with 90% confidence averaged **8,644 MW** — about **4,374 MW below** the
 headline forecast.
 
-**It worked.** Wind actually came in below that plan in **10.3% of periods**,
-against the 10% the method promised. The uncertainty estimate is trustworthy, and
-it was built using only errors from earlier weeks, never from the week being
-planned.
+**It worked, very nearly.** Wind came in below that plan in **11.5% of periods**
+against the 10% the method promised, so it was slightly optimistic rather than
+slightly cautious. Every figure here is measured only on periods whose bands were
+built from earlier weeks — the first week of January is excluded, because its
+bands had no history to learn from and including it would make the method look
+better than it is.
 
 Other settings, same month:
 
 | Certainty you want | Plan on | Actually fell short |
 |---|---|---|
-| 50% (coin flip) | 11,774 MW | 53.4% of periods |
-| 80% | 9,939 MW | 19.6% |
-| **90%** | **9,060 MW** | **10.3%** |
-| 95% | 8,338 MW | 6.9% |
+| 50% (coin flip) | 11,383 MW | 53.8% of periods |
+| 80% | 9,494 MW | 18.2% |
+| **90%** | **8,644 MW** | **11.5%** |
+| 95% | 7,972 MW | 8.7% |
 
 ## 3. Your auction choice is worth more than your forecast timing
 
@@ -93,13 +95,14 @@ separate them.
 
 None of this undermines the confidence figures in point 2. Those learn whatever
 level difference is present from history and correct for it automatically, which
-is why the 90% plan came in at 10.3%. It does mean the raw gap should not be read
+is why the 90% plan came in at 11.5%. It does mean the raw gap should not be read
 as a judgement on the forecaster.
 
 ## What we would recommend
 
 1. **Stop planning on the headline forecast.** Use the 90% figure as the volume
-   you treat as firm, and buy the difference.
+   you treat as firm, and buy the difference. On this month it ran about 1.5
+   percentage points optimistic, so treat it as a floor, not a guarantee.
 2. **Check whether volume can move to the 15:30 auction.** It is the single
    largest accuracy gain available.
 3. **Size overnight positions more cautiously** than daytime ones.

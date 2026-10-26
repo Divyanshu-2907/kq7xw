@@ -89,20 +89,25 @@ takes the forecast, then subtracts the error this forecast has actually made at
 this notice period in the past — not a textbook distribution, its own track
 record.
 
-At ninety per cent confidence, across January, that number averaged nine thousand
-and sixty megawatts.
+At ninety per cent confidence, across January, that number averaged eight
+thousand six hundred and forty-four megawatts.
 
-> [SHOW: point at the shortfall rate card — 10.3%]
+> [SHOW: point at the shortfall rate on the hero card — 11.5% at the gate]
 
-And here's the part I'd want you to check. Wind came in under that plan ten point
-three per cent of the time. We promised ten. So when this tells you ninety per
-cent, it means ninety per cent.
+And here's the part I'd want you to check. Wind came in under that plan eleven
+and a half per cent of the time. We promised ten. So it ran about one and a half
+points optimistic — close, and honest about which way it misses.
+
+And that's measured the hard way. The first week of January is thrown out,
+because its bands had no earlier errors to learn from. Leave it in and this reads
+ten point three per cent, which looks better and proves less.
 
 > [SHOW: drag the confidence buttons 50 → 95]
 
 Want more certainty? The number drops and you buy more. Fifty per cent gets you
-nearly twelve gigawatts, but you're short more than half the time. Ninety-five
-gets you eight thousand three hundred, short only seven per cent of the time.
+about eleven point four gigawatts, but you're short more than half the time.
+Ninety-five gets you just under eight gigawatts, short under nine per cent of
+the time.
 That's the trade, and it's yours to set, not ours."
 
 ## 3:30 — The cost slider
@@ -114,9 +119,9 @@ short usually costs more than being long.
 
 So you tell it the ratio. If a shortfall hurts three times as much as a surplus,
 it stops using the middle of the range and moves to the quantile that actually
-minimises your expected cost. Three times worse means planning on ten thousand
-three hundred and sixty-nine megawatts, and being short a quarter of the time
-instead of half.
+minimises your expected cost. Three times worse means planning on nine thousand
+nine hundred and twenty-two megawatts, and being short about a quarter of the
+time instead of half.
 
 No statistics required at your end. One question: how much worse is short than
 long?"
@@ -313,8 +318,9 @@ to one sentence — the confidence slider already makes the point.
 - Forecast **20,942 MW**, actual **14,048 MW**, miss **6,894 MW**, 12 Jan 01:00,
   17.5 hours of lead
 - Month MAE at the 09:20 gate: **2,145 MW**, mean output **11,581 MW**
-- Plan at 90%: **9,060 MW**, realised shortfall **10.3%**
-- Cost ratio 3×: plan **10,369 MW**, short **25.5%** of periods
+- Plan at 90%: **8,644 MW**, realised shortfall **11.5%** (walk-forward, 1,152
+  periods; 10.3% if the warm-up week is left in)
+- Cost ratio 3×: plan **9,922 MW**, short **24.2%** of periods
 - Calibration: 80% band covered **75.3%**
 - 15:30 gate is **160 MW (7.5%)** better than 09:20; 09:50 only **19 MW** better
 - **96** tests
