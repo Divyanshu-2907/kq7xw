@@ -4,6 +4,11 @@ Work top to bottom on the day. The incognito checks matter most — they are the
 only way to see what a reviewer sees, rather than what your logged-in,
 cache-warmed browser shows you.
 
+## Before anything else
+
+- [ ] **Push.** The live site is only as current as the last push; verify
+      `/api/health` and the hero card on the deployed URL after it finishes
+
 ## Repository
 
 - [ ] Repo is **public** — open it in an incognito window while signed out and
@@ -33,10 +38,9 @@ cache-warmed browser shows you.
 
 ## README
 
-- [ ] **Live app URL is pasted in** — the placeholder
-      `<PASTE VERCEL URL HERE>` is gone
+- [x] **Live app URL is pasted in** — <https://kq7xw.vercel.app>, verified 200
 - [ ] Every link works from the public repo page: `DEPLOY.md`, `FINDINGS.md`,
-      `VIDEO_SCRIPT.md`, and the three `docs/*.png` images render
+      `DESIGN_NOTES.md`, `VIDEO_SCRIPT.md`, and the three `docs/*.png` images render
 - [ ] Screenshots are the current UI, not an older build
 - [ ] AI disclosure section is present and accurate
 
