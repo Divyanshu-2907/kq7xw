@@ -239,7 +239,16 @@ class PlanResponse(Base):
     wind_quantile: float | None = Field(
         default=None, description="1 - q: the wind quantile the plan sits at."
     )
-    totals: PlanTotals
+    totals: PlanTotals = Field(
+        description="Every scored period, including the first week. Those bands "
+        "borrow from the whole sample, so this is the optimistic reading."
+    )
+    walk_forward: PlanTotals | None = Field(
+        default=None,
+        description="The same totals over periods whose bands were built only "
+        "from earlier weeks -- the first week excluded, exactly as "
+        "/api/calibration does. This is the honest number.",
+    )
     points: list[PlanPoint]
 
 

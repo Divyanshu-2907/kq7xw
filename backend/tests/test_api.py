@@ -227,6 +227,35 @@ def test_plan_cost_ratio_uses_the_newsvendor_quantile():
     assert body["totals"]["mean_plan_mw"] < body["totals"]["mean_forecast_mw"]
 
 
+def test_plan_separates_the_leakage_free_reading_from_the_flattering_one():
+    """The first week's bands borrow from the whole month, so its periods are
+    not evidence that the method works. Both readings must be available, and
+    the walk-forward one must cover exactly the periods calibration uses."""
+    body = get("/api/plan?mode=day_ahead&cutoff=09:20&confidence=0.9")
+    everything, honest = body["totals"], body["walk_forward"]
+
+    assert everything["periods"] == 1488
+    assert honest["periods"] == 1152  # the same sample /api/calibration reports
+    cal = get("/api/calibration?mode=day_ahead&cutoff=09:20")["rows"][0]
+    assert honest["periods"] == cal["n"]
+
+    # including the warm-up week understates how often the plan fell short
+    assert everything["shortfall_rate_pct"] == pytest.approx(10.3, abs=0.1)
+    assert honest["shortfall_rate_pct"] == pytest.approx(11.5, abs=0.1)
+    assert honest["shortfall_rate_pct"] > everything["shortfall_rate_pct"]
+
+    # and overstates what could have been committed to
+    assert honest["mean_plan_mw"] < everything["mean_plan_mw"]
+
+
+def test_default_view_plan_is_reported_walk_forward():
+    body = get("/api/plan?mode=horizon&horizon=24&start=2026-01-01&end=2026-01-31&confidence=0.9")
+    honest = body["walk_forward"]
+    assert honest["periods"] == 1152
+    assert honest["mean_plan_mw"] == pytest.approx(8608.5, abs=0.5)
+    assert honest["shortfall_rate_pct"] == pytest.approx(8.5, abs=0.1)
+
+
 def test_higher_cost_ratio_plans_lower_and_runs_short_less_often():
     cheap = get("/api/plan?cost_ratio=1&mode=horizon&horizon=24")["totals"]
     dear = get("/api/plan?cost_ratio=5&mode=horizon&horizon=24")["totals"]

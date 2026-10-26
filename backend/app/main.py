@@ -280,6 +280,22 @@ def _metrics(df: pd.DataFrame) -> s.Metrics:
                         for k, v in compute_metrics(df).items()})
 
 
+def _plan_totals(df: pd.DataFrame) -> s.PlanTotals:
+    gap = df["actual_mw"] - df["plan_mw"]
+    short = gap < 0
+    return s.PlanTotals(
+        periods=int(len(df)),
+        mean_forecast_mw=_f(df["forecast_mw"].mean()),
+        mean_plan_mw=_f(df["plan_mw"].mean()),
+        mean_actual_mw=_f(df["actual_mw"].mean()),
+        plan_vs_forecast_mw=_f((df["plan_mw"] - df["forecast_mw"]).mean()),
+        shortfall_rate_pct=_f(100.0 * short.mean()) if len(df) else None,
+        mean_shortfall_mw=_f(-gap[short].mean()) if short.any() else 0.0,
+        worst_shortfall_mw=_f(-gap.min()) if short.any() else 0.0,
+        mean_headroom_left_on_table_mw=_f(gap.mean()),
+    )
+
+
 def _adjusted(
     df: pd.DataFrame, mode: str, horizon_h: float | None, cutoff_str: str
 ) -> s.ScopeAdjusted | None:
@@ -501,8 +517,10 @@ def plan(
         _fail("give either confidence or cost_ratio, not both.")
     df = _slice(_full_plan(m, h, c, confidence, cost_ratio), lo, hi)
     usable = df.loc[df["plan_mw"].notna() & df["actual_mw"].notna()]
-    gap = usable["actual_mw"] - usable["plan_mw"]
-    short = gap < 0
+    # The first week's bands borrow from the whole sample, so a shortfall rate
+    # that includes them flatters the method. Report both, the same way
+    # /api/calibration already drops warm-up rows.
+    leak_free = usable.loc[usable["band_basis"] != "warm-up"]
     q = newsvendor_quantile(cost_ratio) if cost_ratio is not None else None
     return s.PlanResponse(
         selection=_selection(m, h, c, lo, hi),
@@ -510,17 +528,8 @@ def plan(
         cost_ratio=cost_ratio,
         newsvendor_q=q,
         wind_quantile=(1.0 - q) if q is not None else None,
-        totals=s.PlanTotals(
-            periods=int(len(usable)),
-            mean_forecast_mw=_f(usable["forecast_mw"].mean()),
-            mean_plan_mw=_f(usable["plan_mw"].mean()),
-            mean_actual_mw=_f(usable["actual_mw"].mean()),
-            plan_vs_forecast_mw=_f((usable["plan_mw"] - usable["forecast_mw"]).mean()),
-            shortfall_rate_pct=_f(100.0 * short.mean()) if len(usable) else None,
-            mean_shortfall_mw=_f(-gap[short].mean()) if short.any() else 0.0,
-            worst_shortfall_mw=_f(-gap.min()) if short.any() else 0.0,
-            mean_headroom_left_on_table_mw=_f(gap.mean()),
-        ),
+        totals=_plan_totals(usable),
+        walk_forward=_plan_totals(leak_free) if len(leak_free) else None,
         points=[
             s.PlanPoint(
                 start_time=_t(r.startTime), lead_h=_f(r.lead_h),
