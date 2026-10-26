@@ -1,67 +1,103 @@
 import { Info } from './States.jsx'
-import { MW, biasPhrase, pct } from '../lib/format.js'
+import { GW, MW, pct, signedMW } from '../lib/format.js'
 
-// Four numbers a desk actually argues about. Each one carries its unit and a
-// plain-English line, because "bias +1,852 MW" means nothing on its own.
+// The first thing a trader sees. The hero card is the number they can act on;
+// the rest explain how much to trust it. Each card carries its unit, and the
+// two that the dataset scope offset distorts also show the adjusted figure.
 
-export default function MetricCards({ metrics }) {
+function ScopeLine({ children }) {
+  return <div className="metric-adjust">{children}</div>
+}
+
+export default function MetricCards({ metrics, adjusted, plan, planLoading }) {
   const m = metrics ?? {}
-  const cards = [
-    {
-      label: 'MAE',
-      value: MW(m.mae_mw),
-      plain: 'Typical miss, ignoring direction',
-      tip: 'Mean absolute error: average size of the gap between forecast and actual, in MW. Direction-blind, so over- and under-forecasts do not cancel.',
-    },
-    {
-      label: 'RMSE',
-      value: MW(m.rmse_mw),
-      plain: 'Weights the big misses harder',
-      tip: 'Root mean squared error. Squaring before averaging makes one 6 GW day count for far more than six 1 GW days, so it is the number to watch if a single bad period hurts you more than steady small errors.',
-    },
-    {
-      label: 'Bias',
-      value: MW(m.bias_mw === null || m.bias_mw === undefined ? null : Math.abs(m.bias_mw)),
-      plain: biasPhrase(m.bias_mw),
-      tip: 'Average signed error (forecast minus actual). Positive means the forecast runs high, so wind arrives short of what was promised and you end up buying the difference.',
-    },
-    {
-      label: 'nMAE',
-      value: pct(m.nmae_pct),
-      plain: `MAE as a share of ${MW(m.mean_actual_mw)} mean wind`,
-      tip: 'MAE divided by mean actual generation. We use this instead of MAPE: wind output nears zero often enough that a per-period percentage error explodes (a 200 MW miss on a 50 MW hour reads as 400%) and would swamp the average.',
-    },
-  ]
+  const t = plan?.totals
+  const shortfall = t?.shortfall_rate_pct
 
   return (
     <div className="cards">
-      {cards.map((c) => (
-        <div className="card" key={c.label}>
-          <div className="card-label">
-            {c.label} <Info>{c.tip}</Info>
-          </div>
-          <div className="metric-value num">{c.value}</div>
-          <div className="metric-plain">{c.plain}</div>
-        </div>
-      ))}
-      <div className="card">
+      <div className="card hero">
         <div className="card-label">
-          Periods{' '}
+          Plan on{' '}
           <Info>
-            Half-hourly delivery periods in the selection that had both a live
-            forecast and a settled actual. Coverage below 100% means some periods
-            had no forecast published before the cutoff.
+            The megawatts you could have committed to for this selection, at 90%
+            confidence: the forecast minus the error it has historically made at
+            this notice period, learned only from earlier weeks.
           </Info>
         </div>
-        <div className="metric-value num">
-          {(m.count ?? 0).toLocaleString('en-GB')}
-          <span className="metric-unit">scored</span>
+        <div className="metric-value num hero-value">
+          {planLoading && !t ? '—' : GW(t?.mean_plan_mw, 2)}
         </div>
         <div className="metric-plain">
-          {m.coverage_pct === 100
-            ? 'Every period had a forecast in time'
-            : `${pct(m.coverage_pct, 1)} coverage — some periods had none`}
+          {shortfall == null ? (
+            'at 90% confidence'
+          ) : (
+            <>
+              wind fell below this in{' '}
+              <strong className={Math.abs(shortfall - 10) <= 3 ? 'on-target' : 'off-target'}>
+                {pct(shortfall)}
+              </strong>{' '}
+              of periods (target 10%)
+            </>
+          )}
         </div>
+      </div>
+
+      <div className="card">
+        <div className="card-label">
+          MAE{' '}
+          <Info>
+            Mean absolute error: the average size of the gap between forecast and
+            actual. Direction-blind, so over- and under-forecasts do not cancel.
+          </Info>
+        </div>
+        <div className="metric-value num">{MW(m.mae_mw)}</div>
+        <div className="metric-plain">Typical miss, ignoring direction</div>
+        {adjusted?.mae_mw != null && (
+          <ScopeLine>
+            {MW(adjusted.mae_mw)} after scope adjustment
+          </ScopeLine>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="card-label">
+          Level offset{' '}
+          <Info>
+            Average signed difference (forecast minus actual). Most of it is the
+            scope difference between the two datasets rather than forecast
+            quality: the adjusted figure below is what remains once the level
+            difference is divided out.
+          </Info>
+        </div>
+        <div className="metric-value num">{signedMW(m.bias_mw)}</div>
+        <div className="metric-plain">
+          Forecast series sits {m.bias_mw >= 0 ? 'above' : 'below'} metered output
+        </div>
+        {adjusted?.bias_mw != null && (
+          <ScopeLine>
+            {signedMW(adjusted.bias_mw)} after scope adjustment
+          </ScopeLine>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="card-label">
+          nMAE{' '}
+          <Info>
+            MAE as a share of mean actual generation. Used instead of MAPE: wind
+            output nears zero often enough that a per-period percentage error
+            explodes — a 200 MW miss on a 50 MW hour reads as 400% — and would
+            swamp the average.
+          </Info>
+        </div>
+        <div className="metric-value num">{pct(m.nmae_pct)}</div>
+        <div className="metric-plain">
+          of {MW(m.mean_actual_mw)} mean wind
+        </div>
+        {adjusted?.nmae_pct != null && (
+          <ScopeLine>{pct(adjusted.nmae_pct)} after scope adjustment</ScopeLine>
+        )}
       </div>
     </div>
   )

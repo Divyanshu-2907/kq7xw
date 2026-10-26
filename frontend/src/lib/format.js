@@ -5,6 +5,16 @@ export const MW = (v, digits = 0) =>
     ? '—'
     : `${v.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits })} MW`
 
+export const GW = (v, digits = 1) =>
+  v === null || v === undefined || Number.isNaN(v)
+    ? '—'
+    : `${(v / 1000).toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits })} GW`
+
+export const signedGW = (v, digits = 1) =>
+  v === null || v === undefined || Number.isNaN(v)
+    ? '—'
+    : `${v > 0 ? '+' : ''}${GW(v, digits)}`
+
 export const pct = (v, digits = 1) =>
   v === null || v === undefined || Number.isNaN(v) ? '—' : `${v.toFixed(digits)}%`
 
