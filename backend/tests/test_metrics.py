@@ -11,6 +11,8 @@ from app.metrics import (
     error_by_horizon,
     error_by_hour_of_day,
     error_by_wind_level,
+    scope_adjusted_metrics,
+    scope_ratio,
 )
 
 UTC = "UTC"
@@ -131,3 +133,56 @@ def test_error_by_horizon_runs_a_fresh_no_lookahead_selection_per_horizon():
     assert at_1h["mae_mw"] == pytest.approx(50.0)  # saw the fresh vintage
     assert at_24h["mae_mw"] == pytest.approx(500.0)  # only the stale one was allowed
     assert at_1h["coverage_pct"] == 100.0
+
+
+# --------------------------------------------------------------------------- #
+# dataset scope adjustment
+# --------------------------------------------------------------------------- #
+def test_scope_ratio_recovers_a_known_level_difference():
+    """A forecast series uniformly 15% high should give a ratio of 1.15."""
+    actual = [10000.0 + 100 * i for i in range(60)]
+    joined = _joined([a * 1.15 for a in actual], actual)
+    assert scope_ratio(joined) == pytest.approx(1.15, abs=1e-9)
+
+
+def test_scope_adjustment_removes_a_pure_level_difference():
+    actual = [10000.0 + 100 * i for i in range(60)]
+    joined = _joined([a * 1.15 for a in actual], actual)
+
+    raw = compute_metrics(joined)
+    adjusted = scope_adjusted_metrics(joined, scope_ratio(joined))
+
+    assert raw["bias_mw"] > 1000  # the level difference dominates
+    assert adjusted["bias_mw"] == pytest.approx(0.0, abs=1e-6)
+    assert adjusted["mae_mw"] == pytest.approx(0.0, abs=1e-6)
+    assert adjusted["scope_ratio"] == pytest.approx(1.15)
+
+
+def test_scope_adjustment_leaves_genuine_error_alone():
+    """Symmetric noise around the actual has no level difference to remove."""
+    rng = np.random.default_rng(5)
+    actual = np.full(400, 10000.0)
+    forecast = actual + rng.normal(0, 800, 400)
+    joined = _joined(list(forecast), list(actual))
+
+    ratio = scope_ratio(joined)
+    adjusted = scope_adjusted_metrics(joined, ratio)
+    raw = compute_metrics(joined)
+
+    assert ratio == pytest.approx(1.0, abs=0.02)
+    # the error is real, so adjusting barely moves it
+    assert adjusted["mae_mw"] == pytest.approx(raw["mae_mw"], rel=0.05)
+
+
+def test_scope_ratio_declines_to_guess_from_too_few_rows():
+    joined = _joined([11500.0] * 10, [10000.0] * 10)
+    assert scope_ratio(joined) is None
+    assert scope_adjusted_metrics(joined, None) is None
+
+
+def test_scope_ratio_ignores_near_zero_actuals_that_would_explode_it():
+    """One 1 MW period would otherwise drag the median ratio anywhere."""
+    actual = [10000.0] * 60 + [1.0]
+    forecast = [11500.0] * 60 + [900.0]
+    joined = _joined(forecast, actual)
+    assert scope_ratio(joined) == pytest.approx(1.15, abs=1e-9)

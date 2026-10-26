@@ -117,6 +117,33 @@ def test_metrics_matches_the_day_ahead_findings():
     assert m["nmae_pct"] == pytest.approx(18.52, abs=0.01)
 
 
+def test_metrics_carry_a_scope_adjusted_reading():
+    body = get("/api/metrics?mode=day_ahead&cutoff=09:20")
+    raw, adj = body["metrics"], body["adjusted"]
+
+    assert adj is not None
+    assert adj["scope_ratio"] == pytest.approx(1.1564, abs=0.001)
+    # the level difference is most of the raw error, so adjusting removes a lot
+    assert adj["mae_mw"] == pytest.approx(1239.6, abs=0.5)
+    assert adj["mae_mw"] < raw["mae_mw"]
+    # and almost all of the bias, which is the point of showing it
+    assert abs(adj["bias_mw"]) < 100
+    assert raw["bias_mw"] > 1800
+
+
+def test_the_scope_ratio_is_the_same_whatever_window_is_asked_for():
+    """It is a property of the datasets, so zooming must not change it."""
+    whole = get("/api/metrics?mode=day_ahead&cutoff=09:20")["adjusted"]
+    one_day = get("/api/metrics?mode=day_ahead&cutoff=09:20&start=2026-01-12&end=2026-01-12")["adjusted"]
+    assert one_day["scope_ratio"] == pytest.approx(whole["scope_ratio"])
+
+
+def test_series_carries_the_same_adjustment():
+    body = get("/api/series?start=2026-01-05&end=2026-01-11&mode=day_ahead")
+    assert body["adjusted"]["scope_ratio"] == pytest.approx(1.1564, abs=0.001)
+    assert body["adjusted"]["mae_mw"] < body["metrics"]["mae_mw"]
+
+
 def test_later_gate_uses_a_fresher_vintage():
     """The ten minutes between the EPEX and N2EX gates change the answer."""
     early = get("/api/metrics?mode=day_ahead&cutoff=09:20")["metrics"]

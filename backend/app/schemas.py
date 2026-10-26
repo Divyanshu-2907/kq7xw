@@ -110,6 +110,20 @@ class Metrics(Base):
     mean_actual_mw: float | None
 
 
+class ScopeAdjusted(Metrics):
+    """The same metrics with the forecast divided by the dataset scope ratio.
+
+    Presentational: it separates the persistent level difference between
+    WINDFOR and FUELHH from genuine forecast uncertainty. It is not a corrected
+    forecast and must not be presented as better skill.
+    """
+
+    scope_ratio: float = Field(
+        description="Median forecast/actual across the whole snapshot, derived "
+        "once and applied to this window."
+    )
+
+
 class Selection(Base):
     """Echo of how the live forecast was chosen, so a chart can caption itself."""
 
@@ -124,12 +138,14 @@ class Selection(Base):
 class SeriesResponse(Base):
     selection: Selection
     metrics: Metrics
+    adjusted: ScopeAdjusted | None = None
     points: list[SeriesPoint]
 
 
 class MetricsResponse(Base):
     selection: Selection
     metrics: Metrics
+    adjusted: ScopeAdjusted | None = None
 
 
 # --------------------------------------------------------------------------- #

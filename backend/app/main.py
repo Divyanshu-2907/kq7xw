@@ -43,6 +43,8 @@ from .metrics import (
     error_by_hour_of_day,
     error_by_wind_level,
     join_actuals,
+    scope_adjusted_metrics,
+    scope_ratio,
 )
 from .selection import compute_cutoffs, select_live_forecasts
 
@@ -234,6 +236,13 @@ def _full_plan(
     return plan_on(joined, confidence if confidence is not None else 0.9)
 
 
+@lru_cache(maxsize=64)
+def _scope_ratio(mode: str, horizon_h: float | None, cutoff_str: str) -> float | None:
+    """Derived once from the whole snapshot, then applied to whatever slice is
+    being shown; deriving it from the slice would fit the same data twice."""
+    return scope_ratio(_full_joined(mode, horizon_h, cutoff_str))
+
+
 @lru_cache(maxsize=1)
 def _snapshot_facts() -> tuple[float, tuple[str, ...]]:
     """Max lead and the distinct publish clock times, derived once."""
@@ -269,6 +278,15 @@ def _selection(
 def _metrics(df: pd.DataFrame) -> s.Metrics:
     return s.Metrics(**{k: _f(v) if k != "count" else int(v)
                         for k, v in compute_metrics(df).items()})
+
+
+def _adjusted(
+    df: pd.DataFrame, mode: str, horizon_h: float | None, cutoff_str: str
+) -> s.ScopeAdjusted | None:
+    adj = scope_adjusted_metrics(df, _scope_ratio(mode, horizon_h, cutoff_str))
+    if adj is None:
+        return None
+    return s.ScopeAdjusted(**{k: _f(v) if k != "count" else int(v) for k, v in adj.items()})
 
 
 # --------------------------------------------------------------------------- #
@@ -339,6 +357,7 @@ def series(
     return s.SeriesResponse(
         selection=_selection(m, h, c, lo, hi),
         metrics=_metrics(banded),
+        adjusted=_adjusted(banded, m, h, c),
         points=[
             s.SeriesPoint(
                 start_time=_t(r.startTime), cutoff=_t(r.cutoff),
@@ -366,9 +385,11 @@ def metrics_endpoint(
     MAPE would explode on the many half-hours when wind output is near zero."""
     lo, hi = _window(start, end)
     m, h, c = _mode(mode, horizon, cutoff)
+    window = _slice(_full_joined(m, h, c), lo, hi)
     return s.MetricsResponse(
         selection=_selection(m, h, c, lo, hi),
-        metrics=_metrics(_slice(_full_joined(m, h, c), lo, hi)),
+        metrics=_metrics(window),
+        adjusted=_adjusted(window, m, h, c),
     )
 
 

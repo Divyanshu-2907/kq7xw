@@ -142,3 +142,54 @@ def _grouped_metrics(df: pd.DataFrame, key: str, observed: bool = True) -> pd.Da
     cols = [key, "count", "coverage_pct", "mae_mw", "rmse_mw", "bias_mw", "nmae_pct",
             "p50_abs_error_mw", "p90_abs_error_mw", "mean_actual_mw"]
     return pd.DataFrame(rows).loc[:, cols]
+
+
+# --------------------------------------------------------------------------- #
+# dataset scope adjustment
+# --------------------------------------------------------------------------- #
+#: Below this, actual output is too small for a ratio to be meaningful.
+SCOPE_RATIO_FLOOR_MW = 500.0
+#: Fewer scored rows than this and the ratio is noise, so none is offered.
+SCOPE_RATIO_MIN_SAMPLES = 50
+
+
+def scope_ratio(joined: pd.DataFrame) -> float | None:
+    """Median forecast/actual ratio: the level difference between the datasets.
+
+    WINDFOR sits persistently above FUELHH by roughly a sixth, and the gap
+    survives in vintages published *after* delivery, so it is not forecast error
+    -- the two series appear to count different wind. This estimates that level
+    difference as a single scalar.
+
+    It is a property of the datasets rather than of any window, so callers
+    should derive it once from the whole snapshot and apply it to whatever slice
+    they are showing; deriving it from the slice being scored would be fitting
+    to the same data twice.
+
+    Returns ``None`` when the sample is too small or too near zero to support a
+    ratio, rather than a number nobody should trust.
+    """
+    scored = joined.loc[
+        joined["error"].notna() & (joined["actual_mw"] > SCOPE_RATIO_FLOOR_MW)
+    ]
+    if len(scored) < SCOPE_RATIO_MIN_SAMPLES:
+        return None
+    ratio = float((scored["forecast_mw"] / scored["actual_mw"]).median())
+    return ratio if np.isfinite(ratio) and ratio > 0 else None
+
+
+def scope_adjusted_metrics(joined: pd.DataFrame, ratio: float | None) -> dict | None:
+    """Metrics recomputed with the forecast divided by the scope ratio.
+
+    A presentational aid, not a corrected forecast: it answers "how much of this
+    error is the level difference, and how much is genuine uncertainty".
+    """
+    if ratio is None or ratio <= 0:
+        return None
+    adjusted = joined.copy()
+    adjusted["forecast_mw"] = adjusted["forecast_mw"] / ratio
+    adjusted["error"] = adjusted["forecast_mw"] - adjusted["actual_mw"]
+    adjusted["abs_error"] = adjusted["error"].abs()
+    out = compute_metrics(adjusted)
+    out["scope_ratio"] = ratio
+    return out
