@@ -24,12 +24,21 @@ has historically made at that notice period, the figure you could have committed
 to with 90% confidence averaged **8,644 MW** — about **4,374 MW below** the
 headline forecast.
 
-**It worked, very nearly.** Wind came in below that plan in **11.5% of periods**
-against the 10% the method promised, so it was slightly optimistic rather than
-slightly cautious. Every figure here is measured only on periods whose bands were
-built from earlier weeks — the first week of January is excluded, because its
-bands had no history to learn from and including it would make the method look
-better than it is.
+**It worked, as far as one month can show.** Wind came in below that plan in
+**11.5% of periods** against the 10% the method promised — slightly optimistic
+rather than slightly cautious.
+
+Be careful how much weight you put on that 1.5 point gap. January gives us only
+24 scored days, and **19 of them had no shortfall at all** while three ran at
+69%, 90% and 98%. Resampling whole days puts a 90% range of **3% to 21%** around
+the 11.5%. That range includes 10%, so the miss is **within sampling noise** —
+we cannot yet tell you whether the method is genuinely a point and a half
+optimistic or simply had three unlucky days.
+
+Every figure here is measured only on periods whose bands were built from
+earlier weeks. The first week of January is excluded, because its bands had no
+history to learn from and including it would make the method look better than it
+is.
 
 Other settings, same month:
 
@@ -102,7 +111,8 @@ as a judgement on the forecaster.
 
 1. **Stop planning on the headline forecast.** Use the 90% figure as the volume
    you treat as firm, and buy the difference. On this month it ran about 1.5
-   percentage points optimistic, so treat it as a floor, not a guarantee.
+   percentage points optimistic — within sampling noise, but treat it as a
+   floor rather than a guarantee until we have more months.
 2. **Check whether volume can move to the 15:30 auction.** It is the single
    largest accuracy gain available.
 3. **Size overnight positions more cautiously** than daytime ones.

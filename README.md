@@ -307,8 +307,19 @@ calibration figures use.
 | 95% | 7,971.9 MW | 5,046.1 MW | 8.7% |
 
 At 90% confidence the realised shortfall rate was **11.5%** against a promised
-10% — slightly under-covering, and the headline result of the whole project.
+10% — slightly optimistic, and the headline result of the whole project.
 Including the warm-up week would read 10.3%, which looks better and means less.
+
+**How precisely is that 11.5% known? Not very.** A block bootstrap that
+resamples whole days — because half-hours within a day miss together — puts a
+90% interval of **3.0% to 21.4%** around it. That interval contains 10%, so on
+one month of data the gap from target is **within sampling noise**.
+
+The reason is concentration: **19 of the 24 scored days had no shortfall at
+all**, and three days ran at 69%, 90% and 98%. Almost the entire shortfall rate
+comes from those three days. A naive bootstrap over individual half-hours would
+have reported 10.0–13.0% and implied the rate was pinned down to a point or two;
+it is not. Pinning this down properly needs more months, not more half-hours.
 
 ### The worst day
 
@@ -377,7 +388,10 @@ value pinned to the committed snapshot.
   rather than real imbalance prices, so it tells you how the plan moves, not what
   it earns.
 - **The walk-forward warm-up week is not leakage-free** and is excluded from
-  calibration, which costs 336 periods of sample.
+  calibration and from the plan figures, which costs 336 periods of sample.
+- **The shortfall rate is barely estimable from one month.** Its 90% interval
+  spans 3.0–21.4% because the outcome is concentrated in three bad days out of
+  twenty-four.
 - **`hold` alignment correlates adjacent half-hours**, so quoted sample sizes
   overstate independence and bands are marginally narrower than they should be.
 - **Single-forecaster view.** WINDFOR is the only forecast, so there is no

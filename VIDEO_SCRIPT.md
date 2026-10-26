@@ -96,7 +96,15 @@ thousand six hundred and forty-four megawatts.
 
 And here's the part I'd want you to check. Wind came in under that plan eleven
 and a half per cent of the time. We promised ten. So it ran about one and a half
-points optimistic — close, and honest about which way it misses.
+points optimistic — and the card says so, in amber, rather than rounding it to
+"about right".
+
+Now, how solid is that one and a half points? Honestly, not very. January gives
+us twenty-four scored days, and nineteen of them had no shortfall at all — the
+whole number comes from three bad days. Resample those days and the ninety per
+cent range runs from three per cent to twenty-one. That contains ten. So the
+miss is within sampling noise, and I'd want a few more months before claiming
+the method is genuinely optimistic.
 
 And that's measured the hard way. The first week of January is thrown out,
 because its bands had no earlier errors to learn from. Leave it in and this reads
@@ -320,6 +328,8 @@ to one sentence — the confidence slider already makes the point.
 - Month MAE at the 09:20 gate: **2,145 MW**, mean output **11,581 MW**
 - Plan at 90%: **8,644 MW**, realised shortfall **11.5%** (walk-forward, 1,152
   periods; 10.3% if the warm-up week is left in)
+- Shortfall 90% interval **3.0–21.4%**, block bootstrap over days — contains 10%,
+  so **within sampling noise**; **19 of 24 days** had no shortfall at all
 - Cost ratio 3×: plan **9,922 MW**, short **24.2%** of periods
 - Calibration: 80% band covered **75.3%**
 - 15:30 gate is **160 MW (7.5%)** better than 09:20; 09:50 only **19 MW** better
