@@ -54,7 +54,8 @@ export default function Dashboard({ state, params, meta, onPickSlot, onOpenTab }
       )}
 
       <p className="scope-note">
-        Note: WINDFOR runs ~1.6 GW above FUELHH (dataset scope).{' '}
+        Note: WINDFOR runs about 1.16× above metered FUELHH output; the scope
+        adjustment removes 46.5% of MAE.{' '}
         <button type="button" className="linkish" onClick={() => onOpenTab('quality')}>
           Details →
         </button>

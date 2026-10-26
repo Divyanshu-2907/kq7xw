@@ -463,3 +463,28 @@ dl.handling dd { margin: 0; font-size: 12px; color: var(--text-dim); line-height
   .metric-adjust { margin-top: 5px; padding-top: 5px; font-size: 10px; }
   .scope-note { font-size: 11px; }
 }
+
+/* Explanatory prose in the quality tab. */
+.prose {
+  margin: 0 0 9px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  max-width: 78ch;
+}
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose-list {
+  margin: 0 0 9px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  max-width: 78ch;
+}
+
+.prose-list strong { color: var(--text); font-weight: 600; }

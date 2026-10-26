@@ -258,16 +258,27 @@ Hourly forecasts held across both half-hours, so every settlement period is
 scored. The cost is that adjacent halves share a forecast value, so my sample
 sizes overstate independence. It's in the README.
 
-And the big one. The two Elexon datasets don't appear to count the same wind —
-the forecast runs about one point six gigawatts high, and a vintage published
-fourteen hours *after* delivery is still sixteen hundred megawatts high. No
-forecast error explains that. Dividing by a single scalar removes forty-seven per
-cent of the MAE. So raw bias here is a dataset scope difference, not forecast
-quality, and the app says so on every page rather than burying it.
+And the big one. The forecast series runs about one point one six times the
+metered actuals. Dividing by that single number removes forty-six and a half per
+cent of the MAE and takes bias from plus eighteen hundred megawatts to roughly
+zero. So about half of what looks like forecast error is a level difference.
 
-It doesn't affect the confidence numbers, because the bands learn whatever bias
-is in the history. But resolving it against Elexon's dataset definitions is the
-first thing I'd do next.
+I dug into why, and I'll be straight with you: it's mixed, and one month can't
+settle it. There's a steady gap of under a gigawatt at every wind level, which
+looks like the two datasets counting different wind farms. But there's also a
+much bigger shortfall at high wind — metered output never got past seventeen
+point eight gigawatts all month while the forecast reached twenty-one point two,
+and the windiest forty per cent of periods account for seventy-two per cent of
+the whole gap. That's what curtailment or a metering ceiling looks like.
+
+I fitted both stories. A pure scalar leaves nine hundred and fifty megawatts of
+residual; a pure cap leaves nine hundred and seventy-six. Neither wins. So the
+app reports the offset and doesn't claim a cause, and the Data quality tab shows
+the working. Getting curtailment data to separate the two is the first thing I'd
+do next.
+
+It doesn't affect the confidence numbers, because the bands learn whatever level
+difference is in the history.
 
 After that: twelve months instead of one, for seasonal bands. Real imbalance
 prices, so the cost ratio becomes pounds instead of a ratio. And a persistence
@@ -307,5 +318,9 @@ to one sentence — the confidence slider already makes the point.
 - Calibration: 80% band covered **75.3%**
 - 15:30 gate is **160 MW (7.5%)** better than 09:20; 09:50 only **19 MW** better
 - **96** tests
-- Scope offset: **~1.6 GW**, post-delivery vintage still **+1,596 MW**, scalar
-  removes **47%** of MAE
+- Scope offset: ratio **1.16**, scalar removes **46.5%** of MAE (2,061 → 1,102 MW
+  at the 24 h horizon, the app's default view); bias **+1,849 → −6 MW**
+- Offset is **mixed**: steady sub-GW gap at all levels, plus high-wind
+  saturation — actual peaked at **17.8 GW**, forecast reached **21.2 GW**, and the
+  windiest **40%** of periods carry **72%** of the gap; scalar residual **950 MW**
+  vs cap residual **976 MW**

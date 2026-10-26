@@ -211,19 +211,42 @@ All figures from the committed snapshot at the **09:20 day-ahead gate**, over al
 **1,488** half-hourly delivery periods, unless stated. Reproduce with
 `python backend/scripts/findings.py`.
 
-### Read this first: the two datasets do not measure the same wind
+### Read this first: the forecast series runs above the metered actuals
 
-WINDFOR sits systematically **~1.6 GW above FUELHH**. This is not forecast skill.
-Take the *last* vintage published for each period — on average **13.9 hours after
-delivery had already happened** — and it is still **+1,596 MW** high, a median
-ratio of **1.127**. Correlation between the two series is **0.957**: the shape is
-right, the level is not. Dividing the forecast by a single scalar at a 24-hour
-horizon collapses MAE from **2,060.6 MW to 1,102.0 MW** and bias from
-**+1,848.9 MW to −6.4 MW**, so roughly **47% of the headline error is a fixed
-level offset**. The most likely explanation is that WINDFOR covers a wider set of
-wind capacity than FUELHH's metered BM units, but that has not been confirmed
-against Elexon documentation, so this README does not assert it. Every raw number
-below carries that offset.
+WINDFOR sits about **1.16×** above FUELHH — a median ratio of **1.1603** at the
+24-hour horizon, which is the app's default view. Dividing the forecast by that
+single scalar removes **46.5% of MAE** (2,060.6 MW falls to 1,102.0 MW) and takes
+bias from **+1,848.9 MW to −6.4 MW**. The app shows that scope-adjusted figure
+beside every raw one, and the same adjustment at the 09:20 day-ahead gate removes
+42.2% (ratio 1.1564).
+
+**The cause is mixed, and one month of data cannot settle it.** Binning by
+forecast level, and measuring on the last vintage published *after* each delivery
+period — where forecast error is largely spent and the offset is what remains —
+shows two effects at once:
+
+| Forecast level | Periods | Mean gap (F − A) | Mean ratio |
+|---|---|---|---|
+| 6–8 GW | 71 | +513 MW | 1.098 |
+| 8–10 GW | 105 | +671 MW | 1.098 |
+| 10–12 GW | 96 | +639 MW | 1.073 |
+| 12–14 GW | 64 | +1,031 MW | 1.106 |
+| 14–16 GW | 42 | +1,281 MW | 1.109 |
+| 16–18 GW | 123 | +2,202 MW | 1.153 |
+| 18–20 GW | 138 | +2,914 MW | 1.186 |
+| 20–22 GW | 39 | +4,763 MW | 1.313 |
+
+There is a **persistent 0.6–1.0 GW gap at every wind level**, which looks like the
+two datasets covering different sets of wind farms. On top of that, the gap grows
+sharply at high wind: **metered output saturates near 17–18 GW** (the largest
+half-hour all month was 17,805 MW) while the forecast runs on to 21.2 GW. Periods
+forecasting above 16 GW are 40% of the sample but contribute **72% of the total
+gap** — the signature of curtailment or a metered capacity ceiling.
+
+Both stories fit about equally well: a pure scalar (÷1.127) leaves a mean absolute
+residual of **950 MW**, a pure cap (min(forecast, 15.5 GW)) leaves **976 MW**.
+So this README reports the offset and does not claim a cause. Separating them
+would need curtailment or capacity data, which is outside the brief's data scope.
 
 ### Accuracy at the gate
 

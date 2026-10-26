@@ -74,19 +74,27 @@ it is where overnight exposure concentrates.
 
 ## One caveat you should know about
 
-The two Elexon datasets do not appear to count the same wind. The forecast series
-runs about **1.6 GW above** the actuals consistently — and a forecast republished
-**14 hours after delivery had already happened** is still 1,600 MW high, which no
-amount of forecasting error can explain. Roughly **47%** of the headline error
-above is this fixed offset rather than genuine uncertainty.
+The two Elexon datasets do not line up on level. The forecast series runs about
+**1.16 times** the metered output, consistently. Dividing it by that single
+number (a median ratio of **1.1603**) removes **46.5%** of the error at a
+24-hour notice period across January — and **42.2%** of the 2,145 MW figure in
+point 1, which is measured at the tighter 09:20 gate. Either way, roughly half
+of what looks like forecast error is a level difference, not uncertainty.
 
-This does not affect the confidence figures in point 2, which learn whatever bias
-is present from history and correct for it automatically — that is why the 90%
-plan came in at 10.3%. It does mean the raw bias figure should not be read as a
-judgement on the forecaster. Confirming the cause against Elexon's dataset
-definitions is the first thing we would do next.
+**We can measure it precisely but cannot yet explain it, and we would rather say
+so than guess.** Two things are happening together. There is a steady gap of
+about 0.6 to 1.0 GW at every wind level, which looks like the two datasets
+counting different wind farms. And there is a much bigger shortfall at high wind:
+metered output never exceeded **17.8 GW** all month, while the forecast reached
+**21.2 GW**. The windiest 40% of periods account for **72%** of the total gap,
+which is what curtailment or a metering ceiling looks like. Fitting either
+explanation to the data gives almost identical accuracy, so January alone cannot
+separate them.
 
----
+None of this undermines the confidence figures in point 2. Those learn whatever
+level difference is present from history and correct for it automatically, which
+is why the 90% plan came in at 10.3%. It does mean the raw gap should not be read
+as a judgement on the forecaster.
 
 ## What we would recommend
 
@@ -95,5 +103,6 @@ definitions is the first thing we would do next.
 2. **Check whether volume can move to the 15:30 auction.** It is the single
    largest accuracy gain available.
 3. **Size overnight positions more cautiously** than daytime ones.
-4. **Let us resolve the dataset offset and extend to twelve months** before these
+4. **Let us get curtailment or capacity data** so we can separate the two
+   explanations for the level offset, and extend to twelve months before these
    bands are used for a summer position.

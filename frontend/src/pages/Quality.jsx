@@ -80,6 +80,59 @@ export default function Quality() {
         </div>
       </section>
 
+      <section className="panel" id="scope">
+        <div className="panel-head">
+          <span className="panel-title">
+            Why the forecast series sits above the actuals
+          </span>
+          <span className="panel-note">the dataset offset, measured</span>
+        </div>
+
+        <p className="prose">
+          Across January, WINDFOR runs about <strong>1.16&times;</strong> the
+          metered FUELHH output (median ratio <strong>1.1603</strong> at the
+          24-hour horizon). Dividing the forecast by that single number removes{' '}
+          <strong>46.5%</strong> of MAE — 2,061 MW falls to 1,102 MW — and takes
+          bias from +1,849 MW to −6 MW. That is why the dashboard shows a
+          scope-adjusted figure beside each raw one.
+        </p>
+
+        <p className="prose">
+          <strong>The cause is mixed, and this month&rsquo;s data cannot settle
+          it.</strong> Two things are happening at once:
+        </p>
+
+        <ul className="prose-list">
+          <li>
+            A <strong>persistent gap at every wind level</strong> — roughly 0.7
+            to 1.0 GW even in the middle of the range, which looks like the two
+            datasets covering different sets of wind farms.
+          </li>
+          <li>
+            A <strong>much larger shortfall at high wind</strong>. Metered output
+            saturates near 17–18 GW (the highest half-hour all month was 17,805
+            MW) while the forecast runs on to 21.2 GW. Periods forecasting above
+            16 GW are 40% of the sample but contribute <strong>72%</strong> of
+            the total gap. That is the signature of curtailment or a metered
+            capacity ceiling.
+          </li>
+        </ul>
+
+        <p className="prose">
+          Fitting both stories gives almost the same accuracy: a pure scalar
+          (÷1.127) leaves a mean absolute residual of <strong>950 MW</strong>, a
+          pure cap (min(forecast, 15.5 GW)) leaves <strong>976 MW</strong>.
+          Neither wins, so we report the offset rather than claiming a cause.
+          Separating them would need curtailment or capacity data, which is
+          outside this brief&rsquo;s data scope.
+        </p>
+
+        <p className="panel-note">
+          Measured on the last vintage published after each delivery period,
+          where forecast error is largely spent and the offset is what remains.
+        </p>
+      </section>
+
       <section className="panel">
         <div className="panel-head">
           <span className="panel-title">Publication schedule</span>
