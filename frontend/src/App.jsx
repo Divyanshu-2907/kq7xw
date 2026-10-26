@@ -1,10 +1,10 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from './api.js'
 import { useEndpoint } from './lib/useEndpoint.js'
 import { useUrlState } from './lib/useUrlState.js'
 import TopBar from './components/TopBar.jsx'
 import SlotDrawer from './components/SlotDrawer.jsx'
-import HowToRead from './components/HowToRead.jsx'
+import HowToRead, { hasSeenHowTo, markHowToSeen } from './components/HowToRead.jsx'
 import { ErrorState } from './components/States.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Replay from './pages/Replay.jsx'
@@ -50,6 +50,15 @@ export default function App() {
 
   const meta = useEndpoint(({ signal }) => api.meta({ signal }), [])
 
+  const [howToOpen, setHowToOpen] = useState(false)
+  useEffect(() => {
+    if (!hasSeenHowTo()) setHowToOpen(true)
+  }, [])
+  const closeHowTo = () => {
+    setHowToOpen(false)
+    markHowToSeen()
+  }
+
   const params = useMemo(() => {
     const p = { start: state.start, end: state.end, mode: state.mode }
     if (state.mode === 'horizon') p.horizon = state.horizon
@@ -84,6 +93,9 @@ export default function App() {
         theme={theme}
         onToggleTheme={() => patch({ theme: theme === 'dark' ? 'light' : 'dark' })}
         showRangeControls={RANGE_TABS.has(state.tab)}
+        howToOpen={howToOpen}
+        onToggleHowTo={() => (howToOpen ? closeHowTo() : setHowToOpen(true))}
+        howTo={howToOpen ? <HowToRead onClose={closeHowTo} /> : null}
       />
 
       <nav className="tabs" aria-label="Views">
@@ -103,27 +115,13 @@ export default function App() {
       <main>
         {meta.error && <ErrorState error={meta.error} onRetry={meta.retry} />}
 
-        {state.tab !== 'quality' && (
-          <div className="banner">
-            <span aria-hidden="true">⚠</span>
-            <div>
-              <strong>Known data caveat.</strong> WINDFOR sits about 1.6 GW above
-              FUELHH across this month — a vintage published 14 h <em>after</em>{' '}
-              delivery is still ~1,600 MW high, and a single scalar removes 47% of
-              MAE. The two datasets appear to cover different wind populations, so
-              treat raw bias as a scope difference rather than forecast skill.
-            </div>
-          </div>
-        )}
-
-        {state.tab === 'dashboard' && <HowToRead />}
-
         {state.tab === 'dashboard' && (
           <Dashboard
             state={state}
             params={params}
             meta={meta.data}
             onPickSlot={(iso) => patch({ slot: iso })}
+            onOpenTab={(tab) => patch({ tab })}
           />
         )}
 

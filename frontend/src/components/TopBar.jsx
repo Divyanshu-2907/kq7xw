@@ -3,7 +3,10 @@ import { Info } from './States.jsx'
 // The whole decision context in one strip: which days, which cutoff rule, and
 // how far ahead of delivery the call is being made.
 
-export default function TopBar({ state, patch, meta, theme, onToggleTheme, showRangeControls = true }) {
+export default function TopBar({
+  state, patch, meta, theme, onToggleTheme, showRangeControls = true,
+  howToOpen = false, onToggleHowTo, howTo,
+}) {
   const minDate = meta ? meta.target_start.slice(0, 10) : '2026-01-01'
   const maxDate = meta
     ? new Date(new Date(meta.target_end).getTime() - 86400000).toISOString().slice(0, 10)
@@ -129,6 +132,20 @@ export default function TopBar({ state, patch, meta, theme, onToggleTheme, showR
 
       <div className="spacer" />
 
+      <div className="header-actions">
+      <div className="howto-anchor">
+        <button
+          className="ghost-btn"
+          type="button"
+          onClick={onToggleHowTo}
+          aria-expanded={howToOpen}
+          aria-haspopup="dialog"
+        >
+          ? How to read
+        </button>
+        {howTo}
+      </div>
+
       <button
         className="ghost-btn"
         type="button"
@@ -137,6 +154,7 @@ export default function TopBar({ state, patch, meta, theme, onToggleTheme, showR
       >
         {theme === 'dark' ? 'Light' : 'Dark'}
       </button>
+      </div>
     </header>
   )
 }
