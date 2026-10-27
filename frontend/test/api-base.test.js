@@ -75,11 +75,17 @@ test('a trailing slash is trimmed so paths do not double up', () => {
   )
 })
 
-test('the built bundle contains no local address', () => {
+test('the built bundle contains no local address', (t) => {
   // The unit tests above can pass while a hard-coded URL elsewhere still ships,
-  // so check the real artefact. Skipped when dist/ has not been built.
+  // so check the real artefact.
   const dist = join(here, '..', 'dist', 'assets')
-  if (!existsSync(dist)) return // nothing built yet; CI builds before testing
+  if (!existsSync(dist)) {
+    // Report as skipped, not passed. Returning early here would make this a
+    // silent no-op if the build step were ever moved after the test step, and
+    // the regression it guards would sail through green.
+    t.skip('no dist/ to inspect — run `npm run build` first')
+    return
+  }
 
   const bundles = readdirSync(dist).filter((f) => f.endsWith('.js'))
   assert.ok(bundles.length > 0, 'expected at least one built bundle to check')
